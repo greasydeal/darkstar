@@ -14,7 +14,10 @@ require("scripts/globals/teleports");
 -----------------------------------
 
 function onTrade(player,npc,trade)
-end; 
+	if (trade:getGil() == 10 and trade:getItemCount() == 1) then 
+		player:setPos(49,9,-53,192,243);
+	end
+end;
 
 ----------------------------------- 
 -- onTrigger Action 

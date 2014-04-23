@@ -25,7 +25,13 @@ FlyerForRegine = player:getQuestStatus(SANDORIA,FLYERS_FOR_REGINE);
 		if (MagicFlyer == true and count == 1) then
 			player:messageSpecial(FLYER_REFUSED);
 		end
+	else
+		if (trade:getGil() == 10 and trade:getItemCount() == 1) then 
+		player:setPos(49,9,-53,192,243);
+		end
 	end
+
+	
 end; 
 
 ----------------------------------- 

@@ -10,19 +10,25 @@
 package.loaded["scripts/zones/RuLude_Gardens/TextIDs"] = nil;
 -----------------------------------
 
+require("scripts/globals/settings");
+require("scripts/globals/teleports");
+
 -----------------------------------
 -- onTrade Action
 -----------------------------------
 
 function onTrade(player,npc,trade)
+	if (trade:getGil() == 10 and trade:getItemCount() == 1) then 
+		toHomeNation(player);
+	end
 end;
 
+----------------------------------- 
+-- onTrigger Action 
 -----------------------------------
--- onTrigger Action
------------------------------------
+ 
+function onTrigger(player,npc) 
 
-function onTrigger(player,npc)
-	player:startEvent(0x2782);
 end;
 
 -----------------------------------
@@ -30,8 +36,8 @@ end;
 -----------------------------------
 
 function onEventUpdate(player,csid,option)
-	-- printf("CSID: %u",csid);
-	-- printf("RESULT: %u",option);
+--printf("CSID: %u",csid);
+--printf("RESULT: %u",option);
 end;
 
 -----------------------------------
@@ -39,7 +45,8 @@ end;
 -----------------------------------
 
 function onEventFinish(player,csid,option)
-	-- printf("CSID: %u",csid);
-	-- printf("RESULT: %u",option);
+--printf("CSID: %u",csid);
+--printf("RESULT: %u",option);
+
 end;
 

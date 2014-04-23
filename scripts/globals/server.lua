@@ -64,6 +64,7 @@ function SetExplorerMoogles()
 		17760446,	-- Port_Windurst
 		17793127,	-- Selbina
 		17797249,	-- Mhaura
+		17772769,
 	}
 
 	i = 1;
