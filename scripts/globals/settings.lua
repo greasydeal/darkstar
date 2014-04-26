@@ -18,12 +18,12 @@ require("scripts/globals/common");
 --See chocoprice.lua to adjust chocobo stables.
 --require("scripts/globals/chocoprice");
 -- Enable Extension (1= yes 0= no)
-ENABLE_COP  = 0;
-ENABLE_TOAU = 0;
-ENABLE_WOTG = 0;
-ENABLE_ACP  = 0;
-ENABLE_AMK  = 0;
-ENABLE_ASA  = 0;
+ENABLE_COP  = 1;
+ENABLE_TOAU = 1;
+ENABLE_WOTG = 1;
+ENABLE_ACP  = 1;
+ENABLE_AMK  = 1;
+ENABLE_ASA  = 1;
 
 -- CHARACTER CONFIG
 INITIAL_LEVEL_CAP = 50; --The initial level cap for new players.  There seems to be a hardcap of 255.
@@ -36,7 +36,7 @@ ADVANCED_JOB_LEVEL = 30; --Minimum level to accept advanced job quests.  Set to 
 ALL_MAPS = 1; -- Set to 1 to give starting characters all the maps.
 UNLOCK_OUTPOST_WARPS = 1; -- Set to 1 to give starting characters all outpost warps.  2 to add Tu'Lia and Tavnazia.
 
-SHOP_PRICE = 0.200; --Multiplies prices in NPC shops.
+SHOP_PRICE = 0.100; --Multiplies prices in NPC shops.
 GIL_RATE   = 1.000; --Multiplies gil earned from quests.  Won't always display in game.
 EXP_RATE   = 2.000; --Multiplies exp earned from fov.
 TABS_RATE  = 2.000; --Multiplies tabs earned from fov.
@@ -65,14 +65,14 @@ ITEM_POWER  = 1.000; --Multiplies the effect of items such as Potions and Ethers
 WEAPON_SKILL_POWER  = 1.000; -- Multiplies damage dealt by Weapon Skills.
 WEAPON_SKILL_POINTS = 1.000; --Multiplies points earned during weapon unlocking.
 
-HARVESTING_BREAK_CHANCE = 0.33; --% chance for the sickle to break during harvesting.  Set between 0 and 1.
-EXCAVATION_BREAK_CHANCE = 0.33; --% chance for the pickaxe to break during excavation.  Set between 0 and 1.
-LOGGING_BREAK_CHANCE    = 0.33; --% chance for the hatchet to break during logging.  Set between 0 and 1.
-MINING_BREAK_CHANCE     = 0.33; --% chance for the pickaxe to break during mining.  Set between 0 and 1.
-HARVESTING_RATE         = 0.50; --% chance to recieve an item from haresting.  Set between 0 and 1.
-EXCAVATION_RATE         = 0.50; --% chance to recieve an item from excavation.  Set between 0 and 1.
-LOGGING_RATE            = 0.50; --% chance to recieve an item from logging.  Set between 0 and 1.
-MINING_RATE             = 0.50; --% chance to recieve an item from mining.  Set between 0 and 1.
+HARVESTING_BREAK_CHANCE = 0.05; --% chance for the sickle to break during harvesting.  Set between 0 and 1.
+EXCAVATION_BREAK_CHANCE = 0.05; --% chance for the pickaxe to break during excavation.  Set between 0 and 1.
+LOGGING_BREAK_CHANCE    = 0.05; --% chance for the hatchet to break during logging.  Set between 0 and 1.
+MINING_BREAK_CHANCE     = 0.05; --% chance for the pickaxe to break during mining.  Set between 0 and 1.
+HARVESTING_RATE         = 1.00; --% chance to recieve an item from haresting.  Set between 0 and 1.
+EXCAVATION_RATE         = 1.00; --% chance to recieve an item from excavation.  Set between 0 and 1.
+LOGGING_RATE            = 1.00; --% chance to recieve an item from logging.  Set between 0 and 1.
+MINING_RATE             = 1.00; --% chance to recieve an item from mining.  Set between 0 and 1.
 
 -- SE implemented coffer/chest illusion time in order to prevent coffer farming. No-one in the same area can open a chest or coffer for loot (gil, gems & items)
 -- till a random time between MIN_ILLSION_TIME and MAX_ILLUSION_TIME. During this time players can loot keyitem and item related to quests (AF, maps... etc.)
@@ -161,7 +161,7 @@ HALLOWEEN_YEAR_ROUND = 0; -- Set to 1 to have Harvest Festival initialize outsid
 --MISC
 HOMEPOINT_HEAL = 0; --Set to 1 if you want Home Points to heal you like in single-player Final Fantasy games.
 RIVERNE_PORTERS = 120; -- Time in seconds that Unstable Displacements in Cape Riverne stay open after trading a scale.
-LANTERNS_STAY_LIT = 1200; -- time in seconds that lanterns in the Den of Rancor stay lit.
+LANTERNS_STAY_LIT = 2400; -- time in seconds that lanterns in the Den of Rancor stay lit.
 ENABLE_COP_ZONE_CAP=0; -- enable or disable lvl cap
 TIMEZONE_OFFSET = 9.0; -- Offset from UTC used to determine when "JP Midnight" is for the server.  Default is JST (+9.0).
 ALLOW_MULTIPLE_EXP_RINGS = 0; -- Set to 1 to remove ownership restrictions on the Chariot/Empress/Emperor Band trio.
