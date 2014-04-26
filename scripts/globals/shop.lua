@@ -93,13 +93,45 @@ function ShowOPVendorShop(player)
 
 	stock = 
 	{
-		0x1034,316,		--Antidote
-		0x1037,800,		--Echo Drops
-		0x1020,4832,	--Ether
-		0x1036,2595,	--Eye Drops
-		0x1010,910		--Potion
+		0x10A8,100, --white drop
+		0x10A9,100, --black drop
+        0xB9B,1,  --inoshishinofuda
+        0xB9C,1,  --shikanofuda		
+        0xB9D,1,  --chonofuda
+		0x111D,100, --meat mithkabob
+		0x112E,100, --fish mithkabob
+		0x11CE,100, --yagudo drink
+		0x113D,100, --apple pie
+		0x39C6,3000, --reraise earring
+		0x44B1,10000, --fed. signet staff
+		0x1034,10,		--Antidote
+		0x1037,10,		--Echo Drops
+		0x1036,10,	--Eye Drops
+		0x1020,100,	--Ether
+		0x1010,100		--Potion
 	};
 
 	showShop(player, STATIC, stock);
+
+end;
+
+function ShowGenStore(player)
+    stock = 
+	{
+        0x14BC,99,  --uchitake
+        0x14BD,99,  --tsurara
+        0x14BE,99,  --kawahori
+		0x14BF,99,	--makibishi
+		0x14C0,99,	--hiraishin
+		0x14C1,99,	--mizu
+		0x14C2,99,	--shihei
+		0x14C3,99,	--jusatsu
+		0x14C4,99,	--kaginawa
+		0x14C5,99,	--sairui
+		0x14C6,99,	--kodoku
+		0x14C7,99,	--shinobi-tabi
+    };
+	
+    showShop(player, STATIC, stock);
 
 end;

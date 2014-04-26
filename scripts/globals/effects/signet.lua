@@ -20,6 +20,19 @@ require("scripts/globals/status");
 function onEffectGain(target,effect)
 	target:addMod(MOD_DEF,15);
 	target:addMod(MOD_EVA,15);
+	
+	target:delStatusEffect(EFFECT_RERAISE);
+	target:addStatusEffect(EFFECT_RERAISE,1,0,2700);	
+	
+	target:delStatusEffect(EFFECT_REGEN);	
+	target:addStatusEffect(EFFECT_REGEN,1,3,3600);
+	
+	target:delStatusEffect(EFFECT_REFRESH);
+	target:addStatusEffect(EFFECT_REFRESH,1,3,3600, 0, 3);
+	
+	target:delStatusEffect(EFFECT_DEDICATION);
+	target:addStatusEffect(EFFECT_DEDICATION,50,0,8000);
+	target:addMod(MOD_DEDICATION_CAP, 9000);
 end;
 
 -----------------------------------
