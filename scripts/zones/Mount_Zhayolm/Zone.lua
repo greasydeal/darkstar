@@ -25,8 +25,20 @@ function onZoneIn(player,prevZone)
 	if ((player:getXPos() == 0) and (player:getYPos() == 0) and (player:getZPos() == 0)) then	
 		player:setPos(-521.016,-6.191,60.013,126);
 	end	
+    if (prevZone == 63) then
+        player:setPos(681.950,-24.00,369.936,40);
+    end
 	return cs;	
 end;		
+
+-----------------------------------		
+-- afterZoneIn		
+-----------------------------------		
+
+function afterZoneIn(player)
+    player:entityVisualPacket(0x31,0x70,0x62,0x31);
+    player:entityVisualPacket(0x32,0x70,0x62,0x31);
+end;	
 
 -----------------------------------		
 -- onRegionEnter		

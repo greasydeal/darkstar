@@ -138,7 +138,7 @@ void CAIMobDummy::ActionRoaming()
 	else if (m_PMob->m_OwnerID.id != 0 && !(m_PMob->m_roamFlags & ROAMFLAG_IGNORE))
 	{
 		// i'm claimed by someone and need hate towards this person
-        m_PBattleTarget = (CBattleEntity*)m_PMob->loc.zone->GetEntity(m_PMob->m_OwnerID.targid, TYPE_PC | TYPE_MOB | TYPE_PET);
+        m_PBattleTarget = (CBattleEntity*)m_PMob->GetEntity(m_PMob->m_OwnerID.targid, TYPE_PC | TYPE_MOB | TYPE_PET);
 
 		battleutils::ClaimMob(m_PMob, m_PBattleTarget);
 
@@ -390,7 +390,7 @@ void CAIMobDummy::ActionDropItems()
 {
     if (m_Tick >= m_LastActionTime + m_PMob->m_DropItemTime)
 	{
-        CCharEntity* PChar = (CCharEntity*)m_PMob->loc.zone->GetEntity(m_PMob->m_OwnerID.targid, TYPE_PC);
+        CCharEntity* PChar = (CCharEntity*)m_PMob->GetEntity(m_PMob->m_OwnerID.targid, TYPE_PC);
 
         if (PChar != NULL && PChar->id == m_PMob->m_OwnerID.id)
 		{
@@ -416,9 +416,11 @@ void CAIMobDummy::ActionDropItems()
 				    {
 						//THLvl is the number of 'extra chances' at an item. If the item is obtained, then break out.
 						uint8 tries = 0;
-						while(tries < 1 + m_PMob->m_THLvl)
+						uint8 maxTries = 1 + (m_PMob->m_THLvl > 2 ? 2 : m_PMob->m_THLvl);
+						uint8 bonus = (m_PMob->m_THLvl > 2 ? (m_PMob->m_THLvl - 2)*10 : 0);
+						while(tries < maxTries)
 						{
-							if(WELL512::irand()%1000 < DropList->at(i).DropRate)
+							if(WELL512::irand()%1000 < DropList->at(i).DropRate + bonus)
 							{
 								PChar->PTreasurePool->AddItem(DropList->at(i).ItemID, m_PMob);
 								break;
@@ -442,18 +444,20 @@ void CAIMobDummy::ActionDropItems()
 				*/
 
 				uint8 Pzone = PChar->getZone();
+
 				bool validZone = ((Pzone > 0 && Pzone < 39) || (Pzone > 42 && Pzone < 134) || (Pzone > 135 && Pzone < 185) || (Pzone > 188 && Pzone < 255));
 
-				if(validZone && charutils::GetRealExp(PChar->GetMLevel(),m_PMob->GetMLevel())>0 && m_PMob->m_Type == MOBTYPE_NORMAL){ //exp-yielding monster and drop is successful
-					//TODO: The drop is actually based on a 5 minute timer, and not a probability of dropping!
+                if(validZone && charutils::GetRealExp(PChar->GetMLevel(),m_PMob->GetMLevel()) > 0)
+                {
 
 					if (PChar->StatusEffectContainer->HasStatusEffect(EFFECT_SIGNET) && m_PMob->m_Element > 0 && WELL512::irand()%100 < 20) // Need to move to SIGNET_CHANCE constant
 					{
 						PChar->PTreasurePool->AddItem(4095 + m_PMob->m_Element, m_PMob);
+						
 					}
-					if(WELL512::irand()%100 < 20)
-					{
 
+					if (WELL512::irand() % 100 < 20 && PChar->PTreasurePool->CanAddSeal())
+					{
 						//RULES: Only 1 kind may drop per mob
 						if(m_PMob->GetMLevel() < 50){ //b.seal only
 							PChar->PTreasurePool->AddItem(1126, m_PMob);
@@ -654,7 +658,7 @@ void CAIMobDummy::ActionSpawn()
 		{
 			for(int8 i=1; i<m_PMob->getMobMod(MOBMOD_ASSIST)+1; i++)
 			{
-				CMobEntity* PMob = (CMobEntity*)m_PMob->loc.zone->GetEntity(m_PMob->targid + i, TYPE_MOB);
+				CMobEntity* PMob = (CMobEntity*)m_PMob->GetEntity(m_PMob->targid + i, TYPE_MOB);
 
 				if(PMob != NULL)
 				{
@@ -981,13 +985,14 @@ void CAIMobDummy::ActionAbilityFinish()
 		if(m_PMobSkill->hasMissMsg())
 		{
 		    Action.reaction   = REACTION_MISS;
+            Action.speceffect = SPECEFFECT_NONE;
             if (msg = m_PMobSkill->getAoEMsg())
                 msg = 282;
 		} else {
 		    Action.reaction   = REACTION_HIT;
 		}
 
-        if (Action.speceffect & SPECEFFECT_HIT && Action.param > 0)
+        if (Action.speceffect & SPECEFFECT_HIT)
         {
             Action.speceffect = SPECEFFECT_RECOIL;
             Action.knockback = m_PMobSkill->getKnockback();
@@ -1442,7 +1447,7 @@ void CAIMobDummy::ActionAttack()
 
     if (m_PMob->getMobMod(MOBMOD_SHARE_POS) > 0)
     {
-        CMobEntity* posShare = (CMobEntity*)m_PMob->loc.zone->GetEntity(m_PMob->getMobMod(MOBMOD_SHARE_POS), TYPE_MOB);
+        CMobEntity* posShare = (CMobEntity*)m_PMob->GetEntity(m_PMob->getMobMod(MOBMOD_SHARE_POS), TYPE_MOB);
         m_PMob->loc = posShare->loc;
     }
 
@@ -1505,7 +1510,7 @@ void CAIMobDummy::ActionAttack()
 
 		if (m_AutoAttackEnabled && m_Tick > m_LastActionTime + WeaponDelay)
 		{
-			if (battleutils::IsParalised(m_PMob))
+			if (battleutils::IsParalyzed(m_PMob))
 			{
 				m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CMessageBasicPacket(m_PMob,m_PBattleTarget,0,0, MSGBASIC_IS_PARALYZED));
 			}
@@ -1556,6 +1561,9 @@ void CAIMobDummy::ActionAttack()
 							Action.messageID = 70;
 							Action.reaction   = REACTION_PARRY;
 							Action.speceffect = SPECEFFECT_NONE;
+
+							battleutils::HandleTacticalParry(m_PBattleTarget);
+							battleutils::HandleIssekiganEnmityBonus(m_PBattleTarget, m_PMob);
 						}
 						else if (battleutils::IsAbsorbByShadow(m_PBattleTarget))
 						{

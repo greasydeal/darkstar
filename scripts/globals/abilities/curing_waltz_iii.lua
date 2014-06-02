@@ -35,7 +35,12 @@ function OnUseAbility(player, target, ability)
 	--Performing mj check.
 	if(mjob == 19) then
 		cure = (vit+chr)*0.75+270;
+	else
+		cure = (vit+chr)*0.375+270;
 	end
+
+    -- apply waltz modifiers
+    cure = math.floor(cure * (1.0 + (player:getMod(MOD_WALTZ_POTENTCY)/100)));
 
 	--Reducing TP.
 

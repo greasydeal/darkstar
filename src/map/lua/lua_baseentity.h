@@ -28,11 +28,6 @@
 #include "../../common/lua/lunar.h"
 #include "../entities/charentity.h"
 
-
-
-
-
-
 /************************************************************************
 *  Used in GM command @addallspells		                                *
 *  A giant list of all VALID spell id's (Ignoring "." Spells from DB)   *
@@ -63,12 +58,6 @@ static uint16 ValidSpells[] =
 	585,587,588,589,591,592,593,594,595,596,597,598,599,603,604,605,606,608,610,611,612,613,614,615,616,617,618,620,621,622,623,626,
 	628,629,631,632,633,634,636,637,638,640,641,642,643,644,645,646,647,648,650,651,652,653
 };
-
-
-
-
-
-
 
 class CBaseEntity;
 
@@ -155,6 +144,7 @@ public:
 
 	int32 addItem(lua_State*);				// Add item to Entity inventory (additem(itemNumber,quantity))
 	int32 hasItem(lua_State*);				// Check to see if Entity has item in inventory (hasItem(itemNumber))
+	int32 addTempItem(lua_State*);			// Add temp item to Entity Temp inventory
 	int32 getFreeSlotsCount(lua_State*);	// Gets value of free slots in Entity inventory
 	int32 createWornItem(lua_State*);		// Update this item in worn item (player:createWornItem(itemid))
 	int32 hasWornItem(lua_State*);			// Check if the item is already worn (player:hasWornItem(itemid))
@@ -232,19 +222,19 @@ public:
 	int32 sendMenu(lua_State*);				// Displays a menu (AH,Raise,Tractor,MH etc)
 	int32 sendGuild(lua_State*);			// Sends guild shop menu
 
-	int32 bcnmRegister(lua_State*);			//Attempts to register a bcnm instance (used by Dynamis and BCNM)
-	int32 bcnmEnter(lua_State*);			//Enter a bcnm instance (used by Dynamis and BCNM)
-	int32 bcnmLeave(lua_State*);			//Leave a bcnm instance
+	int32 bcnmRegister(lua_State*);			//Attempts to register a bcnm battlefield (used by Dynamis and BCNM)
+	int32 bcnmEnter(lua_State*);			//Enter a bcnm battlefield (used by Dynamis and BCNM)
+	int32 bcnmLeave(lua_State*);			//Leave a bcnm battlefield
 	int32 isInBcnm(lua_State*);				//true if you're INSIDE the bc (not just the status)
-	int32 isBcnmsFull(lua_State*);			//true if all 3 instances are full
-    int32 isSpecialIntanceEmpty(lua_State*); // 1 if this instance is full
-	int32 getSpecialInstanceLeftTime(lua_State*);// return left time of the specific instance
-	int32 addTimeToSpecialInstance(lua_State*); // add time of the specific instance
+	int32 isBcnmsFull(lua_State*);			//true if all 3 battlefield are full
+	int32 isSpecialBattlefieldEmpty(lua_State*); // 1 if this battlefield is full
+	int32 getSpecialBattlefieldLeftTime(lua_State*);// return left time of the specific instance
+	int32 addTimeToSpecialBattlefield(lua_State*); // add time of the specific instance
 	int32 BCNMSetLoot(lua_State*);           // set a lootlist for a special inctance
-	int32 RestoreAndHealOnInstance(lua_State*); // restore ability , PM and PV on the specific instance
-	int32 getInstanceID(lua_State*);		//returns 1 2 or 3 if the player can enter a bcnm with the instance assigned
+	int32 RestoreAndHealOnBattlefield(lua_State*); // restore ability , PM and PV on the specific instance
+	int32 getBattlefieldID(lua_State*);		//returns 1 2 or 3 if the player can enter a bcnm with the instance assigned
 	int32 getBCNMloot(lua_State*);			//triggers if the player opens the chest inside bcnm
-	int32 addPlayerToSpecialInstance(lua_State*); //for limbus
+	int32 addPlayerToSpecialBattlefield(lua_State*); //for limbus
 
 	int32 setSpawn(lua_State*);                // Sets spawn point
 	int32 setRespawnTime(lua_State*);		   // set respawn time
@@ -316,7 +306,8 @@ public:
 
 	int32 updateEnmity(lua_State*);			// Adds Enmity to player for specified mob
 	int32 updateEnmityFromDamage(lua_State*);// Adds Enmity to player for specified mob for the damage specified
-	int32 updateEnmityFromCure(lua_State*);
+    int32 updateEnmityFromCure(lua_State*);
+    int32 addEnmity(lua_State*);        // Add specified amount of enmity (target, CE, VE)
 	int32 resetEnmity(lua_State*);			//resets enmity to player for specificed mob
     int32 lowerEnmity(lua_State*);			//lower enmity to player for specificed mob
 
@@ -411,6 +402,8 @@ public:
 	int32 getMeleeHitDamage(lua_State*);    // gets the damage of a single hit vs the specified mob
 	int32 getWeaponSkillType(lua_State*);   // gets the type of weapon equipped
 	int32 getWeaponSubSkillType(lua_State*);// gets the subskill of weapon equipped
+    int32 getWSSkillchainProp(lua_State* L);// returns weapon skill's skillchain properties (up to 3)
+
 	int32 isBehind(lua_State*);				// true if you're behind the input target
 	int32 isFacing(lua_State*);				// true if you are facing the target
     int32 getAngle(lua_State* L);           // return angle (rot) between two points (vector from a to b)
@@ -424,6 +417,7 @@ public:
 	int32 hideNPC(lua_State*);              // hide an NPC
 	int32 resetRecasts(lua_State*);         // Reset recasts for the caller
     int32 resetRecast(lua_State*);          // Reset one recast ID
+
 	int32 addCP(lua_State*);				// Add CP
 	int32 getCP(lua_State*);				// Get CP
 	int32 delCP(lua_State*);				// Delete CP
@@ -438,18 +432,39 @@ public:
 
     int32 getAssaultPoint(lua_State*);	    // Get imperial standing
     int32 addAssaultPoint(lua_State*);	    // Add imperial standing
-    int32 delAssaultPoint(lua_State*);	    // Delete imperial standing
+    int32 delAssaultPoint(lua_State*);      // Delete imperial standing
 
-    int32 getZeni(lua_State*);	            // Get Zeni
-    int32 addZeni(lua_State*);	            // Add Zeni
-    int32 delZeni(lua_State*);	            // Delete Zeni
-	int32 isJailed(lua_State *L);			// Is the player jailed
+    int32 getAlliedNotes(lua_State*);       // Get Allied Notes
+    int32 addAlliedNotes(lua_State*);       // Add Allied Notes
+    int32 delAlliedNotes(lua_State*);       // Delete Allied Notes
+    
+    int32 getZeni(lua_State*);              // Get Zeni
+    int32 addZeni(lua_State*);              // Add Zeni
+    int32 delZeni(lua_State*);              // Delete Zeni
 
-    int32 getSeals(lua_State*);	            // Get Seals (beastman seals, etc)
-    int32 addSeals(lua_State*);	            // Add Seals
-    int32 delSeals(lua_State*);	            // Delete Seals
+    int32 isJailed(lua_State *L);           // Is the player jailed
 
-	int32 addNationTeleport(lua_State*);	// Add new teleport: addNationTeleport(nation,number)
+    int32 getCruor(lua_State*);             // Get Cruor
+    int32 addCruor(lua_State*);             // Add Cruor
+    int32 delCruor(lua_State*);             // Delete Cruor
+
+    int32 getSeals(lua_State*);             // Get Seals (beastman seals, etc)
+    int32 addSeals(lua_State*);             // Add Seals
+    int32 delSeals(lua_State*);             // Delete Seals
+
+    int32 getTags(lua_State*);              // Get Imperial ID tags (Assault)
+    int32 addTags(lua_State*);              // Add Imperial ID tags (Assault)
+    int32 delTags(lua_State*);              // Delete Imperial ID tags (Assault)
+
+    int32 getTstone(lua_State*);            // Get Traverser Stone Stock
+    int32 addTstone(lua_State*);            // Add Traverser Stone Stock
+    int32 delTstone(lua_State*);            // Delete Traverser Stone Stock
+
+    int32 getVstone(lua_State*);            // Get Voidstone Stock
+    int32 addVstone(lua_State*);            // Add Voidstone Stock
+    int32 delVstone(lua_State*);            // Delete Voidstone Stock
+
+    int32 addNationTeleport(lua_State*);	// Add new teleport: addNationTeleport(nation,number)
 	int32 getNationTeleport(lua_State*);	// Get teleport you can use by nation: getNationTeleport(nation)
 
 	int32 checkDistance(lua_State*);		// Check Distacnce and returns distance number
@@ -521,7 +536,7 @@ public:
     int32 initNpcAi(lua_State* L);
     int32 isNM(lua_State* L);
     int32 setUnkillable(lua_State* L);
-    int32 getInstance(lua_State* L);
+    int32 getBattlefield(lua_State* L);
 
     int32 getNewPlayer(lua_State* L);
     int32 setNewPlayer(lua_State* L);
@@ -532,6 +547,18 @@ public:
 	int32 hideName(lua_State* L);
 	int32 untargetable(lua_State* L);
 	int32 hideHP(lua_State* L);
+	int32 breathDmgTaken(lua_State* L);
+	int32 magicDmgTaken(lua_State* L);
+	int32 physicalDmgTaken(lua_State* L);
+	int32 rangedDmgTaken(lua_State* L);
+
+	int32 entityVisualPacket(lua_State* L);
+	int32 getParty(lua_State* L);
+	int32 messageText(lua_State* L);
+	int32 instanceEntry(lua_State* L);
+	int32 getInstance(lua_State* L);
+	int32 setInstance(lua_State* L);
+	int32 createInstance(lua_State* L);
 };
 
 #endif

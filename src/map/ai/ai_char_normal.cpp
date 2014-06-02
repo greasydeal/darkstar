@@ -148,7 +148,7 @@ bool CAICharNormal::GetValidTarget(CBattleEntity** PBattleTarget, uint8 ValidTar
 {
 	DSP_DEBUG_BREAK_IF(m_ActionTargetID == 0);
 
-    CBattleEntity* PTarget = (CBattleEntity*)m_PChar->loc.zone->GetEntity(m_ActionTargetID, TYPE_MOB | TYPE_PC | TYPE_PET);
+    CBattleEntity* PTarget = (CBattleEntity*)m_PChar->GetEntity(m_ActionTargetID, TYPE_MOB | TYPE_PC | TYPE_PET);
 	*PBattleTarget = PTarget;
 
     m_ActionTargetID = 0;
@@ -389,7 +389,8 @@ void CAICharNormal::ActionFall()
     m_PChar->UContainer->Clean();
 
 	m_PChar->animation = ANIMATION_DEATH;
-    m_PChar->m_DeathTimestamp = 0; //so char update packet will send the full homepoint timer 
+    m_PChar->m_DeathCounter = 0; //so char update packet will send the full homepoint timer
+    m_PChar->m_DeathTimestamp = (uint32)time(NULL);
 	m_PChar->pushPacket(new CCharUpdatePacket(m_PChar));
     m_PChar->pushPacket(new CRaiseTractorMenuPacket(m_PChar,TYPE_HOMEPOINT));
 
@@ -400,7 +401,6 @@ void CAICharNormal::ActionFall()
 
 	if (!m_PChar->getMijinGakure() && !m_PChar->m_PVPFlag)
 		charutils::DelExperiencePoints(m_PChar,map_config.exp_retain);
-
 
 	charutils::SaveDeathTime(m_PChar);
 
@@ -638,7 +638,7 @@ void CAICharNormal::ActionItemFinish()
 
 	if (m_Tick >= m_LastActionTime + m_PItemUsable->getAnimationTime())
 	{
-        if(battleutils::IsParalised(m_PChar)){
+        if(battleutils::IsParalyzed(m_PChar)){
             m_PChar->loc.zone->PushPacket(m_PChar, CHAR_INRANGE_SELF, new CMessageBasicPacket(m_PChar,m_PBattleSubTarget,0,0,MSGBASIC_IS_PARALYZED));
         } else {
 
@@ -737,8 +737,8 @@ void CAICharNormal::ActionRangedStart()
 	m_PChar->isRapidShot = false;
 	m_PChar->secondDoubleShotTaken = false;
 
-	CItemWeapon* PRanged = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_RANGED]);
-    CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+	CItemWeapon* PRanged = (CItemWeapon*)m_PChar->getEquip(SLOT_RANGED);
+	CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
 	if (PRanged != NULL && PRanged->isType(ITEM_WEAPON) ||
         PAmmo != NULL && PAmmo->isThrowing())
@@ -786,7 +786,7 @@ void CAICharNormal::ActionRangedStart()
 			case SKILL_MRK:
 			{
 
-                PRanged = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+                PRanged = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 				if (PRanged != NULL && PRanged->isType(ITEM_WEAPON))
 				{
 					break;
@@ -928,11 +928,11 @@ void CAICharNormal::ActionRangedFinish()
 		Action.messageID  = 352;
         Action.knockback  = 0;
 
-        CItemWeapon* PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_RANGED]);
-        CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+        CItemWeapon* PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_RANGED);
+        CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
-        bool ammoThrowing = PAmmo->isThrowing();
-        bool rangedThrowing = PItem->isThrowing();
+		bool ammoThrowing = PAmmo ? PAmmo->isThrowing() : false;
+		bool rangedThrowing = PItem ? PItem->isThrowing() : false;
         uint8 slot = SLOT_RANGED;
 
         if (ammoThrowing)
@@ -1372,7 +1372,7 @@ void CAICharNormal::ActionJobAbilityStart()
 		//TODO: Remove all these ability-specific checks and put them into their appropriate scripts
 
 		if (m_PJobAbility->getID() == ABILITY_EAGLE_EYE_SHOT || m_PJobAbility->getID() == ABILITY_SHADOWBIND){
-			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_RANGED]);
+			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_RANGED);
 
 			if (PItem != NULL && PItem->isType(ITEM_WEAPON))
 			{
@@ -1382,7 +1382,7 @@ void CAICharNormal::ActionJobAbilityStart()
 					case SKILL_ARC:
 					case SKILL_MRK:
 					{
-						PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+						PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
 						if (PItem != NULL && PItem->isType(ITEM_WEAPON))
 						{
@@ -1398,7 +1398,7 @@ void CAICharNormal::ActionJobAbilityStart()
 					}
 				}
 			}else{
-				PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+				PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
 				if (PItem == NULL ||
 				  !(PItem->isType(ITEM_WEAPON)) ||
@@ -1510,7 +1510,7 @@ void CAICharNormal::ActionJobAbilityFinish()
     }
 
     // check paralysis
-    if(battleutils::IsParalised(m_PChar)){
+    if(battleutils::IsParalyzed(m_PChar)){
         // display paralyzed
         m_PChar->loc.zone->PushPacket(m_PChar, CHAR_INRANGE_SELF, new CMessageBasicPacket(m_PChar,m_PBattleSubTarget,0,0,MSGBASIC_IS_PARALYZED));
     } else {
@@ -1528,7 +1528,7 @@ void CAICharNormal::ActionJobAbilityFinish()
         }
 
     	if(m_PJobAbility->getID() == ABILITY_REWARD){
-    		CItem* PItem = m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_HEAD]);
+    		CItem* PItem = m_PChar->getEquip(SLOT_HEAD);
     		if(PItem->getID() == 15157 || PItem->getID() == 16104){
     			//TODO: Transform this into an item MOD_REWARD_RECAST perhaps ?
     			//The Bison Warbonnet & Khimaira Bonnet reduces recast time by 10 seconds.
@@ -1872,8 +1872,8 @@ void CAICharNormal::ActionJobAbilityFinish()
                         }
         			}
 
-        			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_RANGED]);
-        			CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+        			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_RANGED);
+        			CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
 
         			// at least 1 hit occured
@@ -1895,7 +1895,7 @@ void CAICharNormal::ActionJobAbilityFinish()
 
 
     		// check for recycle chance
-    		CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+    		CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
     		uint8 recycleChance = m_PChar->getMod(MOD_RECYCLE);
 
     		if (charutils::hasTrait(m_PChar,TRAIT_RECYCLE))
@@ -2029,7 +2029,7 @@ void CAICharNormal::ActionJobAbilityFinish()
 				// Find all mobs within 8.5 radius of the target..
 				for (uint32 x = 0; x < 0x400; x++)
 				{
-					CBaseEntity* PTarget = m_PBattleSubTarget->loc.zone->GetEntity(x, TYPE_MOB);
+					CBaseEntity* PTarget = m_PBattleSubTarget->GetEntity(x, TYPE_MOB);
 					if (PTarget != NULL && PTarget->objtype == TYPE_MOB)
 					{
 						if (m_PTargetFind->isWithinRange(&PTarget->loc.p, 8.5f))
@@ -2257,7 +2257,7 @@ void CAICharNormal::ActionWeaponSkillStart()
 	    }
         if( 218 >= m_PWeaponSkill->getID() && m_PWeaponSkill->getID() >= 192 ) // ranged WS IDs
         {
-			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+			CItemWeapon* PItem = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
 			// before allowing ranged weapon skill...
 			if (PItem == NULL ||								// check item is not null
@@ -2371,7 +2371,7 @@ void CAICharNormal::ActionWeaponSkillFinish()
 	if (m_PChar->equip[SLOT_SUB] != 0)
 	{
 		std::vector<CModifier*>::iterator modIterator;
-		std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_SUB]))->modList;
+		std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getEquip(SLOT_SUB))->modList;
 
 		for(modIterator = modList.begin(); modIterator != modList.end(); modIterator++)
 		{
@@ -2387,7 +2387,7 @@ void CAICharNormal::ActionWeaponSkillFinish()
 		if(m_PChar->equip[SLOT_MAIN] != 0)
 		{
 			std::vector<CModifier*>::iterator modIterator;
-			std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_MAIN]))->modList;
+			std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getEquip(SLOT_MAIN))->modList;
 
 			for(modIterator = modList.begin(); modIterator != modList.end(); modIterator++)
 			{
@@ -2404,7 +2404,7 @@ void CAICharNormal::ActionWeaponSkillFinish()
 		if(m_PChar->equip[SLOT_RANGED] != 0)
 		{
 			std::vector<CModifier*>::iterator modIterator;
-			std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_RANGED]))->modList;
+			std::vector<CModifier*> modList = ((CItemArmor*)m_PChar->getEquip(SLOT_RANGED))->modList;
 
 			for(modIterator = modList.begin(); modIterator != modList.end(); modIterator++)
 			{
@@ -2567,7 +2567,7 @@ void CAICharNormal::ActionWeaponSkillFinish()
 	if (m_PWeaponSkill->getID() >= 192 && m_PWeaponSkill->getID() <= 218)
 	{
 		//ranged WS IDs
-		CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getStorage(LOC_INVENTORY)->GetItem(m_PChar->equip[SLOT_AMMO]);
+		CItemWeapon* PAmmo = (CItemWeapon*)m_PChar->getEquip(SLOT_AMMO);
 
         uint8 recycleChance = m_PChar->getMod(MOD_RECYCLE) + m_PChar->PMeritPoints->GetMeritValue(MERIT_RECYCLE,m_PChar);
 
@@ -2858,7 +2858,7 @@ void CAICharNormal::ActionAttack()
 			return;
 		}
 		m_LastMeleeTime = m_Tick;
-		if (battleutils::IsParalised(m_PChar))
+		if (battleutils::IsParalyzed(m_PChar))
 		{
 			m_PChar->loc.zone->PushPacket(m_PChar, CHAR_INRANGE_SELF, new CMessageBasicPacket(m_PChar,m_PBattleTarget,0,0,MSGBASIC_IS_PARALYZED));
 		}

@@ -42,6 +42,7 @@
 #include "utils/charutils.h"
 #include "utils/fishingutils.h"
 #include "utils/guildutils.h"
+#include "utils/instanceutils.h"
 #include "utils/itemutils.h"
 #include "linkshell.h"
 #include "map.h"
@@ -216,8 +217,6 @@ int32 do_init(int32 argc, int8** argv)
 
 	CREATE(g_PBuff,   int8, map_config.buffer_size + 20);
     CREATE(PTempBuff, int8, map_config.buffer_size + 20);
-	aFree((void*)map_config.mysql_login);
-	aFree((void*)map_config.mysql_password);
 	ShowStatus("The map-server is " CL_GREEN"ready" CL_RESET" to work...\n");
     ShowMessage("=======================================================================\n");
 	return 0;
@@ -690,6 +689,10 @@ int32 map_close_session(uint32 tick, CTaskMgr::CTask* PTask)
 		map_session_data->PChar != NULL)					// crash occured when both server_packet_data & PChar were NULL
 	{
 		charutils::SavePlayTime(map_session_data->PChar);
+        if (map_session_data->PChar->isDead())
+        {
+            charutils::SaveDeathTime(map_session_data->PChar);
+        }
 
 		Sql_Query(SqlHandle, "DELETE FROM accounts_sessions WHERE charid = %u", map_session_data->PChar->id);
 

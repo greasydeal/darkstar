@@ -582,6 +582,8 @@ EFFECT_BRAZEN_STRENGTH          = 490 --
 EFFECT_INNER_STRENGTH           = 491 
 EFFECT_ISSEKIGAN                = 484
 
+EFFECT_MIKAGE                   = 502
+
 EFFECT_MARK_OF_SEED             = 790 -- Tracks 30 min timer in ACP mission "Those Who Lurk in Shadows (II)"
 EFFECT_ALL_MISS                 = 791
 EFFECT_SUPER_BUFF               = 792
@@ -883,6 +885,13 @@ MOD_ROLL_DANCERS		= 0x14A
 MOD_ROLL_SCHOLARS		= 0x14B
 MOD_BUST			= 0x14C
 MOD_FINISHING_MOVES		= 0x14D
+MOD_SAMBA_DURATION          = 0x1EA -- Samba duration bonus(modId = 490)    
+MOD_WALTZ_POTENTCY	        = 0x1EB -- Waltz Potentcy Bonus(modId = 491)
+MOD_CHOCO_JIG_DURATION      = 0x1EC -- Chocobo Jig duration bonus (modId = 492)
+MOD_VFLOURISH_MACC          = 0x1ED -- Violent Flourish accuracy bonus (modId = 493)
+MOD_STEP_FINISH             = 0x1EE -- Bonus finishing moves from steps (modId = 494)
+MOD_STEP_ACCURACY           = 0x193 -- Accuracy bonus for steps (modID = 403)
+MOD_SPECTRAL_JIG            = 0x1EF --Spectral Jig duration modifier (percent increase) (modId = 495)
 MOD_WIDESCAN            	= 0x154
 MOD_BARRAGE_ACC			    =0x1A4
 MOD_ENSPELL             	= 0x155
@@ -946,8 +955,8 @@ MOD_HELIX_EFFECT        = 0x1DE
 MOD_HELIX_DURATION		= 0x1DD
 MOD_STORMSURGE_EFFECT   = 0x190
 MOD_SUBLIMATION_BONUS	= 0x191
+MOD_GRIMOIRE_SPELLCASTING = 0x1E9 -- (modID = 489) "Grimoire: Reduces spellcasting time" bonus
 MOD_WYVERN_BREATH       = 0x192
-MOD_STEP_ACCURACY       = 0x193
 MOD_REGEN_DOWN      	 = 0x194			-- poison
 MOD_REFRESH_DOWN		 = 0x195			-- plague, reduce mp
 MOD_REGAIN_DOWN			 = 0x196			-- plague, reduce tp
@@ -972,6 +981,7 @@ MOD_VELOCITY_RATT_BONUS		  =0x1A8 -- Increases Ranged Attack whilst Velocity Sho
 MOD_SHADOW_BIND_EXT		  	  =0x1A9 -- Extends the time of shadowbind
 MOD_ABSORB_DMG_TO_MP		  =0x1AA --	Absorbs a percentage of damage taken to MP.
 MOD_ENMITY_REDUCTION_PHYSICAL =0x1AB -- Reduces Enmity decrease when taking physical damage
+MOD_SHIELD_MASTERY_TP         =0x1E5 -- Shield mastery TP bonus when blocking with a shield (modId = 485)
 MOD_PERFECT_COUNTER_ATT		  =0x1AC -- Raises weapon damage by 20 when countering while under the Perfect Counter effect. This also affects Weapon Rank (though not if fighting barehanded). 
 MOD_FOOTWORK_ATT_BONUS		  =0x1AD -- Raises the attack bonus of Footwork. (Tantra Gaiters +2 raise 100/1024 to 152/1024) 
 
@@ -1031,6 +1041,9 @@ MOD_MAGIC_NULL                =0x1DC -- (modId = 476)
 MOD_WARCRY_DURATION           =0x1E3 -- Warcy duration bonus from gear
 
 MOD_AUSPICE_EFFECT            =0x1E4 -- Auspice Subtle Blow Bonus (modId = 484)
+MOD_TACTICAL_PARRY            =0x1E6 -- Tactical Parry TP Bonus (modid = 486)
+MOD_MAG_BURST_BONUS           =0x1E7 -- Magic Burst Bonus (modid = 487)
+MOD_INHIBIT_TP                =0x1E8 -- Inhibits TP Gain (percent) (modId = 488)
 
 -----------------------------------
 -- Merit Definitions

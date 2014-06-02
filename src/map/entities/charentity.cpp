@@ -111,7 +111,8 @@ CCharEntity::CCharEntity()
 	m_insideBCNM = false;
 	m_lastBcnmTimePrompt = 0;
 	m_AHHistoryTimestamp = 0;
-	m_DeathTimestamp = 0;
+    m_DeathCounter = 0;
+    m_DeathTimestamp = 0;
 
 	m_EquipFlag  = 0;
     m_EquipBlock = 0;
@@ -286,7 +287,7 @@ CItemContainer* CCharEntity::getStorage(uint8 LocationID)
 
 int8 CCharEntity::getShieldSize()
 {
-	CItemArmor* PItem = (CItemArmor*)(getStorage(LOC_INVENTORY)->GetItem(equip[SLOT_SUB]));
+	CItemArmor* PItem = (CItemArmor*)(getEquip(SLOT_SUB));
 
     if(PItem == NULL){
         return 0;
@@ -368,4 +369,17 @@ uint32 CCharEntity::GetPlayTime(bool needUpdate)
 	}
 
 	return m_PlayTime;
+}
+
+CItemArmor* CCharEntity::getEquip(SLOTTYPE slot)
+{
+	uint8 loc = equip[slot];
+
+	CItemArmor* item = NULL;
+
+	if (loc != 0)
+	{
+		item = (CItemArmor*)getStorage(LOC_INVENTORY)->GetItem(loc);
+	}
+	return item;
 }

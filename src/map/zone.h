@@ -33,7 +33,7 @@
 
 #include "region.h"
 #include "vana_time.h"
-#include "instance_handler.h"
+#include "battlefield_handler.h"
 
 #include "packets/weather.h"
 #include "navmesh.h"
@@ -400,7 +400,8 @@ enum ZONETYPE
 	ZONETYPE_OUTDOORS = 2,
 	ZONETYPE_DUNGEON = 3,
 	ZONETYPE_BATTLEFIELD = 4,
-	ZONETYPE_DYNAMIS = 5
+	ZONETYPE_DYNAMIS = 5,
+	ZONETYPE_DUNGEON_INSTANCED = 6
 };
 
 enum GLOBAL_MESSAGE_TYPE
@@ -413,17 +414,17 @@ enum GLOBAL_MESSAGE_TYPE
 
 enum ZONEMISC
 {
-    MISC_NONE       = 0x0000,   // 0x0000, // Able to be used in any area
-	MISC_ESCAPE		= 0x0001,	// 0x0001, // Ability to use Escape Spell
-	MISC_TRACTOR	= 0x0010,	// 0x0002, // Ability to use Tractor Spell
-	MISC_MAZURKA	= 0x0008,	// 0x0004, // Ability to use Mazurka Spell
-	MISC_FELLOW		= 0x0002,	// 0x0008, // Ability to summon Fellow NPC
-	MISC_PET		= 0x0080,	// 0x0010, // Ability to summon Pets
-	MISC_CHOCOBO	= 0x0004,	// 0x0020, // Ability to use Chocobos
-	MISC_MOGMENU	= 0x0020,	// 0x0040, // Ability to communicate with Nomad Moogle (menu access mog house)
-	MISC_COSTUME	= 0x0040,	// 0x0080, // Ability to use a Costumes
-	MISC_TREASURE	= 0x0100,	// 0x0100, // Presence in the global zone TreasurePool
-	MISC_PVP 		= 0x0200    // 0x0200 // Ability to PvP
+    MISC_NONE       = 0x0000,   // Able to be used in any area
+	MISC_ESCAPE		= 0x0001,	// Ability to use Escape Spell
+	MISC_TRACTOR	= 0x0010,	// Ability to use Tractor Spell
+	MISC_MAZURKA	= 0x0008,	// Ability to use Mazurka Spell
+	MISC_FELLOW		= 0x0002,	// Ability to summon Fellow NPC
+	MISC_PET		= 0x0080,	// Ability to summon Pets
+	MISC_CHOCOBO	= 0x0004,	// Ability to use Chocobos
+	MISC_MOGMENU	= 0x0020,	// Ability to communicate with Nomad Moogle (menu access mog house)
+	MISC_COSTUME	= 0x0040,	// Ability to use a Costumes
+	MISC_TREASURE	= 0x0100,	// Presence in the global zone TreasurePool
+	MISC_PVP 		= 0x0200    // Ability to PvP
 };
 
 /************************************************************************
@@ -466,6 +467,7 @@ class CBaseEntity;
 class CCharEntity;
 class CBattleEntity;
 class CTreasurePool;
+class CZoneEntities;
 
 typedef std::list<CRegion*> regionList_t;
 typedef std::list<zoneLine_t*> zoneLineList_t;
@@ -492,54 +494,53 @@ public:
 	uint8			GetBackgroundMusic();
 	zoneLine_t*		GetZoneLine(uint32 zoneLineID);
 
-	void			HealAllMobs();
-
     CCharEntity*    GetCharByName(int8* name);                                      // finds the player if exists in zone
-	CBaseEntity*	GetEntity(uint16 targid, uint8 filter = -1); 					// получаем указатель на любую сущность в зоне
+	virtual CBaseEntity*	GetEntity(uint16 targid, uint8 filter = -1); 					// получаем указатель на любую сущность в зоне
 
     bool            IsWeatherStatic();                                              // погода в зоне не требует изменения (никогда не меняется)
 	bool			CanUseMisc(uint16 misc);
     void            SetWeather(WEATHER weatherCondition);
-    int             GetWeatherElement();
 
-	void			SpawnPCs(CCharEntity* PChar);									// отображаем персонажей в зоне
-	void			SpawnMOBs(CCharEntity* PChar);									// отображаем MOBs в зоне
-	void			SpawnPETs(CCharEntity* PChar);									// отображаем PETs в зоне
-	void			SpawnNPCs(CCharEntity* PChar);									// отображаем NPCs в зоне
-	void			SpawnMoogle(CCharEntity* PChar);								// отображаем Moogle в MogHouse
-    void            SpawnTransport(CCharEntity* PChar);                             // отображаем транспорт
+	virtual void	SpawnPCs(CCharEntity* PChar);									// отображаем персонажей в зоне
+	virtual void	SpawnMOBs(CCharEntity* PChar);									// отображаем MOBs в зоне
+	virtual void	SpawnPETs(CCharEntity* PChar);									// отображаем PETs в зоне
+	virtual void	SpawnNPCs(CCharEntity* PChar);									// отображаем NPCs в зоне
+	virtual void	SpawnMoogle(CCharEntity* PChar);								// отображаем Moogle в MogHouse
+    virtual void    SpawnTransport(CCharEntity* PChar);                             // отображаем транспорт
 	void			SavePlayTime();
 
-	void			WideScan(CCharEntity* PChar, uint16 radius);					// сканирование местности с заданным радиусом
+	virtual void	WideScan(CCharEntity* PChar, uint16 radius);					// сканирование местности с заданным радиусом
 
-	void			DecreaseZoneCounter(CCharEntity* PChar);						// добавляем персонажа в зону
-	void			IncreaseZoneCounter(CCharEntity* PChar);						// удаляем персонажа из зоны
+	virtual void	DecreaseZoneCounter(CCharEntity* PChar);						// добавляем персонажа в зону
+	virtual void	IncreaseZoneCounter(CCharEntity* PChar);						// удаляем персонажа из зоны
 
-	void			InsertNPC(CBaseEntity* PNpc);									// добавляем в зону npc
-	void			InsertMOB(CBaseEntity* PMob);									// добавляем в зону mob
-	void			InsertPET(CBaseEntity* PPet);									// добавляем в зону pet
-	void			DeletePET(CBaseEntity* PPet);       	                        // derefs the pet's ID from this zone
-	void			InsertPatrol(CBaseEntity* PNpc);
+	virtual void	InsertNPC(CBaseEntity* PNpc);									// добавляем в зону npc
+	virtual void	InsertMOB(CBaseEntity* PMob);									// добавляем в зону mob
+	virtual void	InsertPET(CBaseEntity* PPet);									// добавляем в зону pet
+	virtual void	DeletePET(CBaseEntity* PPet);       	                        // derefs the pet's ID from this zone
 
-    void            FindPartyForMob(CBaseEntity* PEntity);                          // ищем группу для монстра
-    void            TransportDepart(CBaseEntity* PTransportNPC);                    // транспотр отправляется, необходимо собрать пассажиров
+    virtual void    FindPartyForMob(CBaseEntity* PEntity);                          // ищем группу для монстра
+    virtual void    TransportDepart(CBaseEntity* PTransportNPC);                    // транспотр отправляется, необходимо собрать пассажиров
 
 	void			InsertRegion(CRegion* Region);									// добавляем в зону активную область
 
-	void			TOTDChange(TIMETYPE TOTD);										// обработка реакции мира на смену времени суток
-	void			PushPacket(CBaseEntity*, GLOBAL_MESSAGE_TYPE, CBasicPacket*);	// отправляем глобальный пакет в пределах зоны
+	virtual void	TOTDChange(TIMETYPE TOTD);										// обработка реакции мира на смену времени суток
+	virtual void	PushPacket(CBaseEntity*, GLOBAL_MESSAGE_TYPE, CBasicPacket*);	// отправляем глобальный пакет в пределах зоны
 
 	uint32			m_RegionCheckTime;												// время последней проверки регионов
     uint8           m_WeatherFrequency[MAX_WEATHER_ID];                             // вероятность появления каждого типа погоды
 
-	void			ZoneServer(uint32 tick);
-	void			ZoneServerRegion(uint32 tick);
+	virtual void	ZoneServer(uint32 tick);
+	virtual void	ZoneServerRegion(uint32 tick);
+	void			CheckRegions(CCharEntity* PChar);
 
-	EntityList_t	GetCharList();
+	virtual void	ForEachChar(std::function<void(CCharEntity*)> func);
+	virtual void	ForEachCharInstance(CBaseEntity* PEntity, std::function<void(CCharEntity*)> func);
 
 	CZone(ZONEID ZoneID, REGIONTYPE RegionID, CONTINENTTYPE ContinentID);
+	virtual ~CZone();
 
-    CInstanceHandler* m_InstanceHandler;	// BCNM Instances in this zone
+    CBattlefieldHandler* m_BattlefieldHandler;	// BCNM Instances in this zone
 
     CNavMesh*		m_navMesh;				// zones navmesh for finding paths
 
@@ -557,31 +558,30 @@ private:
 	WEATHER			m_Weather;              // текущая погода
     uint32          m_WeatherChangeTime;    // время начала текущей погоды
     bool            m_IsWeatherStatic;      // погода в зоне никогда не меняется
-
+	CZoneEntities*  m_zoneEntities;
 
 	uint16			m_tax;					// налог в bazaar
 	uint16			m_miscMask;				// битовое поле, описывающее возможности использования в зоне определенных умений
 
 	zoneMusic_t		m_zoneMusic;			// информация о мелодиях, используемых в зоне
 
-	EntityList_t	m_mobList;				// список всех MOBs в зоне
-	EntityList_t	m_petList;				// список всех PETs в зоне
-	EntityList_t	m_npcList;				// список всех NPCs в зоне
-	EntityList_t	m_charList;				// список всех PCs  в зоне
-	EntityList_t    m_patrolList;			// list of patroling npcs
-
 	regionList_t	m_regionList;			// список активных областей зоны
 	zoneLineList_t	m_zoneLineList;			// список всех доступных zonelines для зоны
 
-    CBaseEntity*    m_Transport;            // указатель на транспорт в зоне
-	CTreasurePool*	m_TreasurePool;			// глобальный TreasuerPool
+	void	LoadZoneLines();				// список zonelines (можно было бы заменить этот метод методом InsertZoneLine)
+	void    LoadZoneWeather();              // погода
+	void	LoadZoneSettings();				// настройки зоны
+	void	LoadNavMesh();					// Load the zones navmesh. Must exist in scripts/zones/:zone/NavMesh.nav
 
 	CTaskMgr::CTask* ZoneTimer;				// указатель на созданный таймер - ZoneServer. необходим для возможности его остановки
 
-	void	LoadZoneLines();				// список zonelines (можно было бы заменить этот метод методом InsertZoneLine)
-    void    LoadZoneWeather();              // погода
-	void	LoadZoneSettings();				// настройки зоны
-	void	LoadNavMesh();					// Load the zones navmesh. Must exist in scripts/zones/:zone/NavMesh.nav
+	CTreasurePool*	m_TreasurePool;			// глобальный TreasuerPool
+
+protected:
+
+	void createZoneTimer();
+	void CharZoneIn(CCharEntity* PChar);
+	void CharZoneOut(CCharEntity* PChar);
 };
 
 #endif

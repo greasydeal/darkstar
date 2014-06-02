@@ -461,13 +461,10 @@ int32 CalculateEnspellDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender,
 
     if (PAttacker->objtype == TYPE_PC)
     {
-        if (((CCharEntity*)PAttacker)->equip[SLOT_WAIST] != 0)
+        CItemArmor* waist = ((CCharEntity*)PAttacker)->getEquip(SLOT_WAIST);
+        if (waist && waist->getID() == obi[element])
         {
-            CItemArmor* waist = (CItemArmor*)((CCharEntity*)PAttacker)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)PAttacker)->equip[SLOT_WAIST]);
-            if (waist && waist->getID() == obi[element])
-            {
-                obiBonus = true;
-            }
+            obiBonus = true;
         }
     }
     else
@@ -490,7 +487,6 @@ int32 CalculateEnspellDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender,
     
     damage = (damage * (float)resist);
     damage = (damage * (float)dBonus);
-    damage = DmgTaken(PDefender, damage);
     damage = MagicDmgTaken(PDefender, damage);
     damage = damage - PDefender->getMod(MOD_PHALANX);
     damage = dsp_cap(damage, 0, 99999);
@@ -605,7 +601,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
 
 
         // SHIELD
-        CItem* PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_SUB]);
+        CItem* PItem = PCharDef->getEquip(SLOT_SUB);
 
         if(PItem){
             switch(PItem->getID())
@@ -634,7 +630,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
 
         // BODY
         // deal with spikesEffect effect gear
-        PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_BODY]);
+        PItem = PCharDef->getEquip(SLOT_BODY);
 
         if(PItem){
             spikesEffect = (SUBEFFECT)0;
@@ -699,7 +695,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
         }
 
         // LEGS
-        PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_LEGS]);
+		PItem = PCharDef->getEquip(SLOT_LEGS);
 
         if(PItem){
             spikesEffect = (SUBEFFECT)0;
@@ -753,7 +749,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
         }
 
         // HEAD
-        PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_HEAD]);
+		PItem = PCharDef->getEquip(SLOT_HEAD);
 
         if(PItem){
             spikesEffect = (SUBEFFECT)0;
@@ -802,7 +798,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
         }
 
         // HANDS
-        PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_HANDS]);
+		PItem = PCharDef->getEquip(SLOT_HANDS);
 
         if(PItem){
             spikesEffect = (SUBEFFECT)0;
@@ -832,7 +828,7 @@ bool HandleSpikesDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAc
         }
 
         // FEET
-        PItem = PCharDef->getStorage(LOC_INVENTORY)->GetItem(PCharDef->equip[SLOT_FEET]);
+		PItem = PCharDef->getEquip(SLOT_FEET);
 
         if(PItem){
             spikesEffect = (SUBEFFECT)0;
@@ -967,7 +963,7 @@ void HandleEnspell(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAction_
             PDefender->StatusEffectContainer->DelStatusEffect(EFFECT_HASTE_DAZE, PAttacker->id);
             PDefender->StatusEffectContainer->DelStatusEffect(EFFECT_ASPIR_DAZE, PAttacker->id);
         }
-        if (PDefender->m_EcoSystem != SYSTEM_UNDEAD)
+        if ((PDefender->m_EcoSystem != SYSTEM_UNDEAD) || (daze == EFFECT_HASTE_DAZE))
         {
             PDefender->StatusEffectContainer->AddStatusEffect(new CStatusEffect(daze,
                 0, power,
@@ -1164,8 +1160,9 @@ void HandleEnspell(CBattleEntity* PAttacker, CBattleEntity* PDefender, apAction_
             else if (daze == EFFECT_HASTE_DAZE)
             {
                 Action->additionalEffect = SUBEFFECT_HASTE;
-                // TODO: JA haste that lasts a single attack round (even if every attack misses) - custom status effect probably
+                // Ability haste added in scripts\globals\effects\haste_samba_haste_effect.lua
                 PAttacker->StatusEffectContainer->AddStatusEffect(new CStatusEffect(EFFECT_HASTE_SAMBA_HASTE, 0, power, 0, 10));
+                // Status effect removed in CAttackRound constructor (i.e. after next attack round is calculated)
             }
         }
     }
@@ -1556,12 +1553,12 @@ uint8 GetRangedHitRate(CBattleEntity* PAttacker, CBattleEntity* PDefender, bool 
 	if(PAttacker->objtype == TYPE_PC)
 	{
 		CCharEntity* PChar = (CCharEntity*)PAttacker;
-		CItemWeapon* PItem = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_RANGED]);
+		CItemWeapon* PItem = (CItemWeapon*)PChar->getEquip(SLOT_RANGED);
 
 		if(PItem==NULL || !PItem->isType(ITEM_WEAPON))
 		{
 			// try throwing weapon
-			PItem = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_AMMO]);
+			PItem = (CItemWeapon*)PChar->getEquip(SLOT_AMMO);
 		}
 
 		if(PItem!=NULL && PItem->isType(ITEM_WEAPON))
@@ -1597,7 +1594,7 @@ float GetRangedPDIF(CBattleEntity* PAttacker, CBattleEntity* PDefender)
 	if(PAttacker->objtype == TYPE_PC)
 	{
 		CCharEntity* PChar = (CCharEntity*)PAttacker;
-		CItemWeapon* PItem = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_RANGED]);
+		CItemWeapon* PItem = (CItemWeapon*)PChar->getEquip(SLOT_RANGED);
 
 		if (PItem != NULL && PItem->isType(ITEM_WEAPON))
 		{
@@ -1605,7 +1602,7 @@ float GetRangedPDIF(CBattleEntity* PAttacker, CBattleEntity* PDefender)
 		}
 		else
 		{
-			PItem = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_AMMO]);
+			PItem = (CItemWeapon*)PChar->getEquip(SLOT_AMMO);
 
 			if (PItem == NULL || !PItem->isType(ITEM_WEAPON) || (PItem->getSkillType() != SKILL_THR)){
 				ShowDebug("battleutils::GetRangedPDIF Cannot find a valid ranged weapon to calculate PDIF for. \n");
@@ -1749,77 +1746,70 @@ bool TryInterruptSpell(CBattleEntity* PAttacker, CBattleEntity* PDefender){
 
 /***********************************************************************
 		Calculates the block rate of the defender
-Generally assumed to be a linear relationship involving shield skill and
-'projected' skill (like with spell interruption). According to
-www.bluegartr.com/threads/103597-Random-Facts-Thread/page22 it appears
-to be BASE+(PLD_Skill - MOB_Skill)/4.6 where base is the base activation
-for the given shield type (unknown). These are subject to caps (65% max
-for non-Ochain shields) and presumably 5% min cap *untested*
-Presuming base values 10%/20%/30%/40% (big->low)
-They don't mention anything about caps on PLD_Skill-MOB_Skill but there
-has to be, else a Lv75 PLD with 0 skill would never be able to skillup
-as they need to be HIT to skillup, meaning they can't really lvl up on
-low level monsters as they miss too much. Presuming a min cap of -10%.
+Incorporates testing and data from:
+http://www.ffxiah.com/forum/topic/21671/paladin-faq-info-and-trade-studies/34/#2581818
+https://docs.google.com/spreadsheet/ccc?key=0AkX3maplDraRdFdCZHI2OU93aVgtWlZhN3ozZEtnakE#gid=0
+http://www.ffxionline.com/forums/paladin/55139-shield-data-size-2-vs-size-3-a.html
+
+Formula is:
+ShieldBaseRate + (DefenderShieldSkill - AttackerCombatSkill) * SkillModifier
+
+Skill Modifier appears to be 0.215 based on the data available.
+
+Base block rates are (small to large shield type) 55% -> 50% -> 45% -> 30%
+Aegis is a special case, having the base block rate of a size 2 type.
 ************************************************************************/
 uint8 GetBlockRate(CBattleEntity* PAttacker,CBattleEntity* PDefender)
 {
-	int8 shieldSize = 0;
-	float skill = 0.0f;
+    int8 shieldSize = 3;
+    int8 base = 0;
+    uint16 attackskill = PAttacker->GetSkill((SKILLTYPE)(PAttacker->m_Weapons[SLOT_MAIN]->getSkillType()));
+    uint16 blockskill = PDefender->GetSkill(SKILL_SHL);
 
-	if(PDefender->objtype == TYPE_PC)
-	{
-		CCharEntity* PChar = (CCharEntity*)PDefender;
-		CItemArmor* PItem = (CItemArmor*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_SUB]);
+    if(PDefender->objtype == TYPE_PC)
+    {
+        CCharEntity* PChar = (CCharEntity*)PDefender;
+        CItemArmor* PItem = (CItemArmor*)PChar->getEquip(SLOT_SUB);
 
-		if(PItem!=NULL && PItem->getID()!=65535 && PItem->getShieldSize()>0 && PItem->getShieldSize()<=5)
-		{
-			shieldSize = PItem->getShieldSize();
-
-			if(shieldSize == 5)
-			{
-				// aegis
-				shieldSize = 0;
-			}
-
-    		skill = PDefender->GetSkill(SKILL_SHL) + PDefender->getMod(MOD_SHIELD);
-    	}
-    	else
-    	{
-    		// no shield no chance
-    		return 0;
-    	}
-	}
+        if(PItem)
+            shieldSize = PItem->getShieldSize();
+        else
+            return 0;
+    }
 	else if(PDefender->objtype == TYPE_MOB && PDefender->GetMJob() == JOB_PLD)
-	{
-		CMobEntity* PMob = (CMobEntity*)PDefender;
+    {
+        CMobEntity* PMob = (CMobEntity*)PDefender;
+        if(PMob->m_EcoSystem != SYSTEM_UNDEAD && PMob->m_EcoSystem != SYSTEM_BEASTMEN)
+            return 0;
+    }
+    else
+        return 0;
 
-		if(PMob->m_EcoSystem == SYSTEM_UNDEAD || PMob->m_EcoSystem == SYSTEM_BEASTMEN)
-		{
-			// fake it
-			skill = GetMaxSkill(SKILL_SHL,JOB_PLD,PDefender->GetMLevel());
-			shieldSize = 3;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		return 0;
-	}
+    switch (shieldSize)
+    {
+        case 1: // buckler
+            base = 55;
+            break;
+        case 2: // round
+        case 5: // aegis
+            base = 50;
+            break;
+        case 3: // kite
+            base = 45;
+            break;
+        case 4: // tower
+            base = 30;
+            break;
+        case 6: // ochain
+            base = 110;
+            break;
+        default:
+            return 0;
+    }
 
-	float diff = 1.0f + (((float)PDefender->GetMLevel() - PAttacker->GetMLevel()) / 15.0f);
+    float skillmodifier = (blockskill - attackskill) * 0.215f;
 
-	if(diff < 0.4f) diff = 0.4f;
-	if(diff > 1.4f) diff = 1.4f;
-
-	float dex = PAttacker->DEX();
-	float agi = PDefender->AGI();
-
-	float base = (5.0 - shieldSize) * 5.0f;
-
-    return dsp_cap((skill * 0.1f + (agi - dex) * 0.125f + base) * diff, 5, 65);
+    return dsp_cap(base + (int8)skillmodifier, 5, (shieldSize == 6 ? 100 : 65));
 }
 
 uint8 GetParryRate(CBattleEntity* PAttacker, CBattleEntity* PDefender)
@@ -1856,7 +1846,17 @@ uint8 GetParryRate(CBattleEntity* PAttacker, CBattleEntity* PDefender)
 
         	float dex = PAttacker->DEX();
         	float agi = PDefender->AGI();
-            return dsp_cap((skill * 0.1f + (agi - dex) * 0.125f + 10.0f) * diff, 5, 25);
+
+			uint8 parryRate = dsp_cap((skill * 0.1f + (agi - dex) * 0.125f + 10.0f) * diff, 5, 25);
+
+			// Issekigan grants parry rate bonus. From best available data, if you already capped out at 25% parry it grants another 25% bonus for ~50% parry rate
+			if (PDefender->objtype == TYPE_PC && PDefender->StatusEffectContainer->HasStatusEffect(EFFECT_ISSEKIGAN)){
+				int16 issekiganBonus = PDefender->StatusEffectContainer->GetStatusEffect(EFFECT_ISSEKIGAN)->GetPower();
+				//ShowDebug(CL_CYAN"GetParryRate: Issekigan Active, Parry Rate %d -> %d...\n" CL_RESET, parryRate, (parryRate+issekiganBonus));
+				parryRate = parryRate + issekiganBonus;
+			}
+
+			return parryRate;
         }
     }
 
@@ -1906,18 +1906,16 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 			formlessMod += ((CCharEntity*)PAttacker)->PMeritPoints->GetMeritValue(MERIT_FORMLESS_STRIKES, (CCharEntity*)PAttacker);
 
 		damage = damage * formlessMod / 100;
+
+		// TODO: chance to 'resist'
+		damage = MagicDmgTaken(PDefender, damage);
 	}
 	else
 	{
-
-        damage = DmgTaken(PDefender, damage);
-
         if(isRanged)
-        {
             damage = RangedDmgTaken(PDefender, damage);
-        } else {
+        else
             damage = PhysicalDmgTaken(PDefender, damage);
-        }
 
 		switch(PAttacker->m_Weapons[slot]->getDmgType())
 		{
@@ -1937,6 +1935,13 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 				if(PDefender->m_Weapons[SLOT_SUB]->IsShield())
 				{
 					absorb = 100 - PDefender->m_Weapons[SLOT_SUB]->getShieldAbsorption();
+                    if((dsp_max(damage - (PDefender->getMod(MOD_PHALANX) + PDefender->getMod(MOD_STONESKIN)), 0) >0) 
+                        && (charutils::hasTrait((CCharEntity*)PDefender, TRAIT_SHIELD_MASTERY)))
+                    {
+                        // If the player blocked with a shield and has shield mastery, add shield mastery TP bonus
+                        // unblocked damage (before block but as if affected by stoneskin/phalanx) must be greater than zero
+                        PDefender->addTP(PDefender->getMod(MOD_SHIELD_MASTERY_TP));			
+                    }
 				}
 			}
 			else
@@ -1944,9 +1949,9 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 				absorb = 50;
 			}
 
-			damage = (damage * absorb) / 100;
-		}
-	}
+            damage = (damage * absorb) / 100;
+        }
+    }
     if (damage > 0)
     {
         damage = dsp_max(damage - PDefender->getMod(MOD_PHALANX), 0);
@@ -2009,11 +2014,15 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 
         //battleutils::MakeEntityStandUp(PDefender); Removed: addHP() is already making victim stand if dmg > 0
 
-    	// try to interrupt spell
+    	// try to interrupt spell if not a ranged attack and not blocked by Shield Mastery
     	if(PDefender->PBattleAI->m_PMagicState != NULL)
     	{
-    		// use new method
-	    	PDefender->PBattleAI->m_PMagicState->TryHitInterrupt(PAttacker);
+            if ((!isRanged)
+                && !((isBlocked) && (PDefender->objtype == TYPE_PC ) && (charutils::hasTrait((CCharEntity*)PDefender, TRAIT_SHIELD_MASTERY))))
+            {
+                    // use new method
+    	            PDefender->PBattleAI->m_PMagicState->TryHitInterrupt(PAttacker);
+    	    }
     	}
         else
         {
@@ -2025,7 +2034,7 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 		if((slot==SLOT_RANGED || slot==SLOT_AMMO) && PAttacker->objtype == TYPE_PC)
 		{
 			CCharEntity* PChar = (CCharEntity*)PAttacker;
-			CItemWeapon* PAmmo = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_AMMO]);
+			CItemWeapon* PAmmo = (CItemWeapon*)PChar->getEquip(SLOT_AMMO);
 
 			int16 delay = PAttacker->GetRangedWeaponDelay(true);
 
@@ -2065,7 +2074,7 @@ uint32 TakePhysicalDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, in
 			//mobs hit get basetp+3 whereas pcs hit get basetp/3
 			if(PDefender->objtype == TYPE_PC)
 			{
-				//yup store tp counts on hits taken too!
+                //yup store tp counts on hits taken too!
 				PDefender->addTP((baseTp / 3) * sBlowMult * (1.0f + 0.01f * (float)(PDefender->getMod(MOD_STORETP) + getStoreTPbonusFromMerit(PAttacker)))); //here again...
 			}
 			else
@@ -2501,7 +2510,7 @@ uint8 CheckMultiHits(CBattleEntity* PEntity, CItemWeapon* PWeapon)
 *                                                                       *
 ************************************************************************/
 
-bool IsParalised(CBattleEntity* PAttacker)
+bool IsParalyzed(CBattleEntity* PAttacker)
 {
 	return (WELL512::irand()%100 < dsp_cap(PAttacker->getMod(MOD_PARALYZE) - PAttacker->getMod(MOD_PARALYZERES), 0, 100));
 }
@@ -3095,6 +3104,9 @@ uint16 TakeSkillchainDamage(CBattleEntity* PAttacker, CBattleEntity* PDefender, 
 
     damage = damage * (1000 - resistance) / 1000;
 
+	// Handle Severe Damage Reduction Effects
+	damage = HandleSevereDamage(PDefender, damage);
+
     PDefender->addHP(-damage);
 
     if (PAttacker->PMaster != NULL)
@@ -3140,7 +3152,7 @@ CItemArmor* GetEntityArmor(CBattleEntity* PEntity, SLOTTYPE Slot)
 
     if(PEntity->objtype == TYPE_PC)
     {
-        return (CItemArmor*)(((CCharEntity*)PEntity)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)PEntity)->equip[Slot]));
+        return (((CCharEntity*)PEntity)->getEquip(Slot));
     }
     else if(PEntity->objtype == TYPE_NPC)
     {
@@ -3156,7 +3168,7 @@ CItemWeapon* GetEntityWeapon(CBattleEntity* PEntity, SLOTTYPE Slot)
 
     if(PEntity->objtype == TYPE_PC)
     {
-        return (CItemWeapon*)(((CCharEntity*)PEntity)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)PEntity)->equip[Slot]));
+        return (CItemWeapon*)(((CCharEntity*)PEntity)->getEquip(Slot));
     }
     else if(PEntity->objtype == TYPE_NPC)
     {
@@ -3470,7 +3482,7 @@ void TransferEnmity(CBattleEntity* CharHateReceiver, CBattleEntity* CharHateGive
 	if (PMob == NULL || ((CMobEntity*)PMob)->PEnmityContainer == NULL)
 		return;
 
-	//CBaseEntity* PMob = CharHateGiver->loc.zone->GetEntity(mobID, TYPE_MOB);
+	//CBaseEntity* PMob = CharHateGiver->GetEntity(mobID, TYPE_MOB);
 
 	((CMobEntity*)PMob)->PEnmityContainer->LowerEnmityByPercent(CharHateGiver , percentToTransfer, CharHateReceiver);
 }
@@ -3489,12 +3501,12 @@ uint16 doSoulEaterEffect(CCharEntity* m_PChar, uint32 damage)
 	{
 		//lost 10% current hp, converted to damage (displayed as just a strong regular hit)
 		float drainPercent = 0.1;
-		CItem* PItemHead = ((CCharEntity*)m_PChar)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)m_PChar)->equip[SLOT_HEAD]);
-		CItem* PItemBody = ((CCharEntity*)m_PChar)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)m_PChar)->equip[SLOT_BODY]);
-		CItem* PItemLegs = ((CCharEntity*)m_PChar)->getStorage(LOC_INVENTORY)->GetItem(((CCharEntity*)m_PChar)->equip[SLOT_LEGS]);
-		if(PItemHead->getID() == 12516 || PItemHead->getID() == 15232 || PItemBody->getID() == 14409 || PItemLegs->getID() == 15370){
-		drainPercent = 0.12;
-	}
+		CItem* PItemHead = ((CCharEntity*)m_PChar)->getEquip(SLOT_HEAD);
+		CItem* PItemBody = ((CCharEntity*)m_PChar)->getEquip(SLOT_BODY);
+		CItem* PItemLegs = ((CCharEntity*)m_PChar)->getEquip(SLOT_LEGS);
+        if((PItemHead && (PItemHead->getID() == 12516 || PItemHead->getID() == 15232)) || (PItemBody && PItemBody->getID() == 14409) || (PItemLegs && PItemLegs->getID() == 15370))
+            drainPercent = 0.12;
+
 		damage = damage + m_PChar->health.hp*drainPercent;
 		m_PChar->addHP(-drainPercent*m_PChar->health.hp);
 	}
@@ -3578,7 +3590,7 @@ uint8 getBarrageShotCount(CCharEntity* PChar)
 	*/
 
 	// only archery + marksmanship can use barrage
-	CItemWeapon* PItem = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_RANGED]);
+	CItemWeapon* PItem = (CItemWeapon*)PChar->getEquip(SLOT_RANGED);
 
 	if(PItem && PItem->getSkillType() != 25 && PItem->getSkillType() != 26)
 	{
@@ -3592,7 +3604,7 @@ uint8 getBarrageShotCount(CCharEntity* PChar)
 		lvl = PChar->GetSLevel();
 
 	// Hunters bracers+1 will add an extra shot
-	CItemArmor* PItemHands = (CItemArmor*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_HANDS]);
+	CItemArmor* PItemHands = PChar->getEquip(SLOT_HANDS);
 
 
 	if (PItemHands && PItemHands->getID() == 14900)
@@ -3607,7 +3619,7 @@ uint8 getBarrageShotCount(CCharEntity* PChar)
 
 
 	// make sure we have enough ammo for all these shots
-	CItemWeapon* PAmmo = (CItemWeapon*)PChar->getStorage(LOC_INVENTORY)->GetItem(PChar->equip[SLOT_AMMO]);
+	CItemWeapon* PAmmo = (CItemWeapon*)PChar->getEquip(SLOT_AMMO);
 
 	if (PAmmo && PAmmo->getQuantity() < shotCount)
 	{
@@ -4026,30 +4038,22 @@ void ClaimMob(CBattleEntity* PDefender, CBattleEntity* PAttacker)
 }
 
 
-int32 DmgTaken(CBattleEntity* PDefender, int32 damage)
-{
-
-    float resist = 1.0f + (PDefender->getMod(MOD_DMG) / 100.0f);
-
-    if(resist < 0.5f)
-    {
-        resist = 0.5f;
-    }
-
-    return damage * resist;
-}
-
 int32 BreathDmgTaken(CBattleEntity* PDefender, int32 damage)
 {
     float resist = 1.0f + (PDefender->getMod(MOD_UDMGBREATH) / 100.0f);
     damage *= resist;
 
-    resist = 1.0f + (PDefender->getMod(MOD_DMGBREATH) / 100.0f);
+    resist = 1.0f + (PDefender->getMod(MOD_DMGBREATH) / 100.0f) + (PDefender->getMod(MOD_DMG) / 100.0f);
 
     if(resist < 0.5f)
         resist = 0.5f;
 
-    return damage * resist;
+	damage = damage * resist;
+
+	// Handle Severe Damage Reduction Effects
+	damage = HandleSevereDamage(PDefender, damage);
+
+    return damage;
 }
 
 int32 MagicDmgTaken(CBattleEntity* PDefender, int32 damage)
@@ -4058,14 +4062,19 @@ int32 MagicDmgTaken(CBattleEntity* PDefender, int32 damage)
 
     damage *= resist;
 
-    resist = (256 + PDefender->getMod(MOD_DMGMAGIC)) / 256.0f;
+    resist = ((256 + PDefender->getMod(MOD_DMGMAGIC)) / 256.0f) + (PDefender->getMod(MOD_DMG) / 100.0f);
 
     if(resist < 0.5f)
     {
         resist = 0.5f;
     }
 
-    return damage * resist;
+	damage = damage * resist;
+
+	// Handle Severe Damage Reduction Effects
+	damage = HandleSevereDamage(PDefender, damage);
+
+    return damage;
 }
 
 int32 PhysicalDmgTaken(CBattleEntity* PDefender, int32 damage)
@@ -4074,14 +4083,19 @@ int32 PhysicalDmgTaken(CBattleEntity* PDefender, int32 damage)
 
     damage *= resist;
 
-    resist = 1.0f + (PDefender->getMod(MOD_DMGPHYS) / 100.0f);
+    resist = 1.0f + (PDefender->getMod(MOD_DMGPHYS) / 100.0f) + (PDefender->getMod(MOD_DMG) / 100.0f);
 
     if(resist < 0.5f)
     {
         resist = 0.5f;
     }
 
-    return damage * resist;
+	damage = damage * resist;
+
+	// Handle Severe Damage Reduction Effects
+	damage = HandleSevereDamage(PDefender, damage);
+
+    return damage;
 }
 
 int32 RangedDmgTaken(CBattleEntity* PDefender, int32 damage)
@@ -4090,14 +4104,26 @@ int32 RangedDmgTaken(CBattleEntity* PDefender, int32 damage)
 
     damage *= resist;
 
-    resist = 1.0f + (PDefender->getMod(MOD_DMGRANGE) / 100.0f);
+    resist = 1.0f + (PDefender->getMod(MOD_DMGRANGE) / 100.0f) + (PDefender->getMod(MOD_DMG) / 100.0f);
 
     if(resist < 0.5f)
     {
         resist = 0.5f;
     }
 
-    return damage * resist;
+	damage = damage * resist;
+
+	// Handle Severe Damage Reduction Effects
+	damage = HandleSevereDamage(PDefender, damage);
+
+    return damage;
+}
+
+void HandleIssekiganEnmityBonus(CBattleEntity* PDefender, CMobEntity* PAttacker){
+	if (PDefender->StatusEffectContainer->HasStatusEffect(EFFECT_ISSEKIGAN)){
+		// Issekigan is Known to Grant 300 CE per parry, but unknown how it effects VE (per bgwiki). So VE is left alone for now.
+		PAttacker->PEnmityContainer->UpdateEnmity(PDefender, 300, 0, false);
+	}
 }
 
 void HandleAfflatusMiseryAccuracyBonus(CBattleEntity* PAttacker){
@@ -4125,6 +4151,19 @@ void HandleAfflatusMiseryDamage(CBattleEntity* PDefender, int32 damage)
 {
 	if (PDefender->StatusEffectContainer->HasStatusEffect(EFFECT_AFFLATUS_MISERY)){
 		PDefender->setModifier(MOD_AFFLATUS_MISERY, damage);
+	}
+}
+
+void HandleTacticalParry(CBattleEntity* PEntity){
+	for (uint8 j = 0; j < PEntity->TraitList.size(); ++j)
+	{
+		CTrait* PExistingTrait = PEntity->TraitList.at(j);
+
+		if (PExistingTrait->getID() == TRAIT_TACTICAL_PARRY){
+			int16 tpBonus = PEntity->getMod(MOD_TACTICAL_PARRY);
+			//ShowDebug(CL_CYAN"HandleTacticalParry: Tactical Parry Tp Bonus = %d\n" CL_RESET, tpBonus);
+			PEntity->addTP(tpBonus);
+		}
 	}
 }
 
@@ -4174,6 +4213,44 @@ int32 HandleStoneskin(CBattleEntity* PDefender, int32 damage)
     return damage;
 }
 
+int32 HandleSevereDamage(CBattleEntity* PDefender, int32 damage){
+	damage = HandleSevereDamageEffect(PDefender, EFFECT_MIGAWARI, damage, true);
+	// In the future, handle other Severe Damage Effects like Scherzo & Earthen Armor here
+	return damage;
+}
+
+int32 HandleSevereDamageEffect(CBattleEntity* PDefender, EFFECT effect, int32 damage, bool removeEffect){
+
+	if (PDefender->StatusEffectContainer->HasStatusEffect(effect)){
+		int32 maxHp = PDefender->GetMaxHP();
+
+		// The Threshold for Damage is Stored in the Effect Power
+		float threshold = (PDefender->StatusEffectContainer->GetStatusEffect(effect)->GetPower() / 100.00);
+
+		// We calcluate the Damage Threshold off of Max HP & the Threshold Percentage
+		float damageThreshold = maxHp * threshold;
+
+		//ShowDebug(CL_CYAN"HandleSevereDamageEffect: Severe Damage Occurred! Damage = %d, Threshold = %f, Damage Threshold = %f\n" CL_RESET, damage, threshold, damageThreshold);
+
+		// Severe Damage is when the Attack's Damage Exceeds a Certain Threshold
+		if (damage > damageThreshold){
+			uint16 severeReduction = PDefender->StatusEffectContainer->GetStatusEffect(effect)->GetSubPower();
+			severeReduction = dsp_cap((100 - severeReduction), 0, 100) / 100;
+			damage = damage * severeReduction;
+
+			if (removeEffect){
+				PDefender->StatusEffectContainer->DelStatusEffect(effect);
+			}
+
+			//ShowDebug(CL_CYAN"HandleSevereDamageEffect: Reduciing Severe Damage!\n" CL_RESET);			
+		}
+	}
+
+	//ShowDebug(CL_CYAN"HandleSevereDamageEffect: NOT Reducing Severe Damage!\n" CL_RESET);
+
+	return damage;
+}
+
 /************************************************************************
 *                                                                       *
 *	get mobs 2 hour skills	(should be moved into mobskill.cpp)         *
@@ -4220,13 +4297,13 @@ CMobSkill* GetTwoHourMobSkill(JOBTYPE job)
 void assistTarget(CCharEntity* PChar, uint16 TargID)
 {
 	// get the player we want to assist
-	CBattleEntity* PlayerToAssist = (CBattleEntity*)PChar->loc.zone->GetEntity(TargID, TYPE_MOB | TYPE_PC);
+	CBattleEntity* PlayerToAssist = (CBattleEntity*)PChar->GetEntity(TargID, TYPE_MOB | TYPE_PC);
 	if (PlayerToAssist != NULL)
 	{
 		if (PlayerToAssist->objtype == TYPE_PC && PlayerToAssist->m_TargID != 0)
 		{
 			// get that players target (mob,player,pet only)
-			CBattleEntity* EntityToLockon = (CBattleEntity*)PChar->loc.zone->GetEntity(PlayerToAssist->m_TargID, TYPE_MOB | TYPE_PC | TYPE_PET);
+			CBattleEntity* EntityToLockon = (CBattleEntity*)PChar->GetEntity(PlayerToAssist->m_TargID, TYPE_MOB | TYPE_PC | TYPE_PET);
 			if (EntityToLockon != NULL)
 			{
 				// lock on to the new target!
@@ -4291,10 +4368,112 @@ WEATHER GetWeather(CBattleEntity* PEntity, bool ignoreScholar)
         scholarSpell = WEATHER_GLOOM;
     WEATHER zoneWeather = zoneutils::GetZone(PEntity->getZone())->GetWeather();
 
-    if (ignoreScholar || scholarSpell == WEATHER_NONE)
+    if (ignoreScholar || scholarSpell == WEATHER_NONE || zoneWeather == (scholarSpell+1)) // Strong weather overwrites scholar spell weak weather
         return zoneWeather;
+    else if (scholarSpell == zoneWeather)
+		return (WEATHER)(zoneWeather + 1); // Storm spells stack with weather
     else
         return scholarSpell;
+}
+
+bool WeatherMatchesElement(WEATHER weather, uint8 element)
+{
+    switch(element)
+    {
+    case ELEMENT_NONE:
+        return false; // Can't match with no element...
+        break;
+    case ELEMENT_FIRE:
+        switch(weather)
+        {
+        case WEATHER_HOT_SPELL:
+        case WEATHER_HEAT_WAVE:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_EARTH:
+        switch(weather)
+        {
+        case WEATHER_DUST_STORM:
+        case WEATHER_SAND_STORM:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_WATER:
+        switch(weather)
+        {
+        case WEATHER_RAIN:
+        case WEATHER_SQUALL:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_WIND:
+        switch(weather)
+        {
+        case WEATHER_WIND:
+        case WEATHER_GALES:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_ICE:
+        switch(weather)
+        {
+        case WEATHER_SNOW:
+        case WEATHER_BLIZZARDS:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_THUNDER:
+        switch(weather)
+        {
+        case WEATHER_THUNDER:
+        case WEATHER_THUNDERSTORMS:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_LIGHT:
+        switch(weather)
+        {
+        case WEATHER_AURORAS:
+        case WEATHER_STELLAR_GLARE:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    case ELEMENT_DARK:
+        switch(weather)
+        {
+        case WEATHER_GLOOM:
+        case WEATHER_DARKNESS:
+            return true;
+            break;
+        default:
+            return false;
+        }
+        break;
+    default:
+        return false;
+    }
 }
 
 void DrawIn(CBattleEntity* PEntity, CMobEntity* PMob, float offset)

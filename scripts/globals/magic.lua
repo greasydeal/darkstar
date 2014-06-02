@@ -77,6 +77,9 @@ function calculateMagicDamage(V,M,player,spell,target,skilltype,atttype,hasMulti
 
     if(dint<=0) then --ifdINT penalises, it's always M=1
         dmg = dmg + dint;
+        if(dmg <= 0) then --dINT penalty cannot result in negative damage (target absorption)
+            return 0;
+        end
     elseif(dint > 0 and dint <= SOFT_CAP) then --The standard calc, most spells hit this
         dmg = dmg + (dint*M);
     elseif(dint > 0 and dint > SOFT_CAP and dint < HARD_CAP) then --After SOFT_CAP, INT is only half effective
@@ -972,8 +975,7 @@ end;
         -- end
     end
 
-    dmg = utils.dmgTaken(target, dmg);
-    dmg = utils.magicDmgTaken(target, dmg);
+    dmg = target:magicDmgTaken(dmg);
 
 	if (dmg > 0) then
 		dmg = dmg - target:getMod(MOD_PHALANX);
@@ -993,7 +995,7 @@ end;
         target:updateEnmityFromDamage(caster,dmg);
     end
     -- Only add TP if the target is a mob
-    if (target:getObjType() ~= TYPE_PC) then
+    if (target:getObjType() ~= TYPE_PC and dmg > 0) then
         target:addTP(10);
     end
 
@@ -1002,8 +1004,7 @@ end;
 
 function finalMagicNonSpellAdjustments(caster,target,ele,dmg)
 
-    dmg = utils.dmgTaken(target, dmg);
-    dmg = utils.magicDmgTaken(target, dmg);
+    dmg = target:magicDmgTaken(dmg);
 
 	if (dmg > 0) then
 		dmg = dmg - target:getMod(MOD_PHALANX);
@@ -1098,6 +1099,9 @@ function calculateMagicBurstAndBonus(caster, spell, target)
         --end -- if AM2+
     end
 
+    -- Add in Magic Burst Bonus Modifier. The Trait Boosts this. Eventually the gear should use this too to be cleaner.
+    burstBonus = burstBonus + (caster:getMod(MOD_MAG_BURST_BONUS) / 100);
+    
     return burst, burstBonus;
 end;
 

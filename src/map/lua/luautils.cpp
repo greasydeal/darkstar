@@ -32,8 +32,9 @@
 #include "luautils.h"
 #include "lua_ability.h"
 #include "lua_baseentity.h"
-#include "lua_instance.h"
+#include "lua_battlefield.h"
 #include "lua_region.h"
+#include "lua_instance.h"
 #include "lua_spell.h"
 #include "lua_statuseffect.h"
 #include "lua_mobskill.h"
@@ -53,6 +54,7 @@
 #include "../vana_time.h"
 #include "../utils/zoneutils.h"
 #include "../transport.h"
+#include "../zone_instance.h"
 #include "../packets/auction_house.h"
 #include "../packets/char_sync.h"
 #include "../packets/char_update.h"
@@ -123,7 +125,8 @@ int32 init()
 
     Lunar<CLuaAbility>::Register(LuaHandle);
 	Lunar<CLuaBaseEntity>::Register(LuaHandle);
-    Lunar<CLuaInstance>::Register(LuaHandle);
+    Lunar<CLuaBattlefield>::Register(LuaHandle);
+	Lunar<CLuaInstance>::Register(LuaHandle);
     Lunar<CLuaMobSkill>::Register(LuaHandle);
     Lunar<CLuaRegion>::Register(LuaHandle);
 	Lunar<CLuaSpell>::Register(LuaHandle);
@@ -358,7 +361,7 @@ int32 getNationRank(lua_State* L)
             return 1;
         default:
             lua_pushinteger(L, 0);
-            return 0;
+            return 1;
     }
 }
 
@@ -536,7 +539,7 @@ int32 SetVanadielTimeOffset(lua_State* L)
         return 1;
     }
     lua_pushnil(L);
-    return 0;
+    return 1;
 }
 
 /************************************************************************
@@ -613,7 +616,7 @@ int32 IsMoonNew(lua_State* L)
 			}
 	}
 	lua_pushboolean(L, false);
-	return 0;
+	return 1;
 }
 
 /************************************************************************
@@ -653,7 +656,7 @@ int32 IsMoonFull(lua_State* L)
 			}
 	}
 	lua_pushboolean(L, false);
-	return 0;
+	return 1;
 }
 
 /************************************************************************
@@ -667,7 +670,17 @@ int32 SpawnMob(lua_State* L)
 	{
 		uint32 mobid = (uint32)lua_tointeger(L,1);
 
-        CMobEntity* PMob = (CMobEntity*)zoneutils::GetEntity(mobid, TYPE_MOB);
+		CMobEntity* PMob = NULL;
+
+		if (!lua_isnil(L, 2) && lua_isuserdata(L, 2))
+		{
+			CLuaInstance* PLuaInstance = Lunar<CLuaInstance>::check(L, 2);
+			PMob = (CMobEntity*)PLuaInstance->GetInstance()->GetEntity(mobid & 0xFFF, TYPE_MOB);
+		}
+		else
+		{
+			PMob = (CMobEntity*)zoneutils::GetEntity(mobid, TYPE_MOB);
+		}
         if (PMob != NULL)
         {
 
@@ -786,7 +799,7 @@ int32 setMobPos(lua_State *L)
 			}
 		}
 		lua_pushnil(L);
-		return 0;
+		return 1;
 	}
 	ShowError(CL_RED"setMobPos :: Mob ID is not valid." CL_RESET);
 	return 1;
@@ -1095,6 +1108,50 @@ int32 OnZoneIn(CCharEntity* PChar)
         lua_pop(LuaHandle, returns-1);
     }
     return retVal;
+}
+
+int32 AfterZoneIn(uint32 tick, CTaskMgr::CTask *PTask)
+{
+	CCharEntity* PChar = (CCharEntity*)PTask->m_data;
+
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "afterZoneIn");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/Zone.lua", PChar->loc.zone->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	lua_getglobal(LuaHandle, "afterZoneIn");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaBaseEntity LuaBaseEntity(PChar);
+	Lunar<CLuaBaseEntity>::push(LuaHandle, &LuaBaseEntity);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::AfterZoneIn: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::AfterZoneIn (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
 }
 
 /************************************************************************
@@ -2085,7 +2142,7 @@ int32 OnMonsterMagicPrepare(CBattleEntity* PCaster, CBattleEntity* PTarget)
 }
 
 /************************************************************************
-*  OnMobInitialise                                                      *
+*  onMobInitialize                                                      *
 *  Used for passive trait                                               *
 *                                                                       *
 ************************************************************************/
@@ -3535,6 +3592,442 @@ int32 OnUseAbilityRoll(CCharEntity* PChar, CBattleEntity* PTarget, CAbility* PAb
 	return 0;
 }
 
+int32 AfterInstanceRegister(uint32 tick, CTaskMgr::CTask *PTask)
+{
+	CCharEntity* PChar = (CCharEntity*)PTask->m_data;
+
+	DSP_DEBUG_BREAK_IF(!PChar->PInstance);
+
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "afterInstanceRegister");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PChar->loc.zone->GetName(), PChar->PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	lua_getglobal(LuaHandle, "afterInstanceRegister");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaBaseEntity LuaBaseEntity(PChar);
+	Lunar<CLuaBaseEntity>::push(LuaHandle, &LuaBaseEntity);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::AfterInstanceRegister: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::AfterInstanceRegister (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+int32 OnInstanceLoadFailed(CZone* PZone)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceLoadFailed");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/Zone.lua", PZone->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceLoadFailed: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceLoadFailed");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		ShowError("luautils::OnInstanceLoadFailed: undefined procedure onInstanceLoadFailed\n");
+		return 0;
+	}
+
+	if (lua_pcall(LuaHandle, 0, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceLoadFailed: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns < 1)
+	{
+		ShowError("luatils::OnInstanceLoadFailed (%s): 1 return expected, got %d\n", File, returns);
+		return 0;
+	}
+	uint32 retVal = (!lua_isnil(LuaHandle, -1) && lua_isnumber(LuaHandle, -1) ? (int32)lua_tonumber(LuaHandle, -1) : 0);
+	lua_pop(LuaHandle, 1);
+	if (returns > 1)
+	{
+		ShowError("luatils::OnInstanceLoadFailed (%s): 1 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns - 1);
+	}
+	return retVal;
+}
+
+int32 OnInstanceTimeUpdate(CZone* PZone, CInstance* PInstance, uint32 time)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceTimeUpdate");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PZone->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceTimeUpdate: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceTimeUpdate");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		ShowError("luautils::OnInstanceTimeUpdate: undefined procedure onInstanceTimeUpdate\n");
+		return 0;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	lua_pushinteger(LuaHandle, time);
+
+	if (lua_pcall(LuaHandle, 2, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceTimeUpdate: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceTimeUpdate (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+int32 OnInstanceFailure(CInstance* PInstance)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceFailure");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PInstance->GetZone()->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceFailure: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceFailure");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		ShowError("luautils::OnInstanceFailure: undefined procedure onInstanceFailure\n");
+		return 0;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceFailure: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceFailure (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+/************************************************************************
+*																		*
+*  When instance is created, let player know it's finished				*
+*																		*
+************************************************************************/
+
+int32 OnInstanceCreated(CCharEntity* PChar, CInstance* PInstance)
+{
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceCreated");
+
+	int8 File[255];
+	if (luaL_loadfile(LuaHandle, PChar->m_event.Script.c_str()) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		memset(File, 0, sizeof(File));
+		snprintf(File, sizeof(File), "scripts/zones/%s/Zone.lua", PChar->loc.zone->GetName());
+
+		if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+		{
+			ShowError("luautils::OnInstanceCreated %s\n", lua_tostring(LuaHandle, -1));
+			lua_pop(LuaHandle, 1);
+			return -1;
+		}
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceCreated");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		ShowError("luautils::OnInstanceCreated: undefined procedure onInstanceCreated\n");
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaBaseEntity LuaBaseEntity(PChar);
+	Lunar<CLuaBaseEntity>::push(LuaHandle, &LuaBaseEntity);
+
+	if (PInstance)
+	{
+		CLuaInstance LuaInstance(PInstance);
+		Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+	}
+	else
+	{
+		lua_pushnil(LuaHandle);
+	}
+
+	CLuaBaseEntity LuaTargetEntity(PChar->m_event.Target);
+	Lunar<CLuaBaseEntity>::push(LuaHandle, &LuaTargetEntity);
+
+	if (lua_pcall(LuaHandle, 3, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceCreated %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceCreated (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+/************************************************************************
+*																		*
+*  When instance is created, run setup script for instance				*
+*																		*
+************************************************************************/
+
+int32 OnInstanceCreated(CInstance* PInstance)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceCreated");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PInstance->GetZone()->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceCreated: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceCreated");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		ShowError("luautils::OnInstanceCreated: undefined procedure onInstanceCreated\n");
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceCreated %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceCreated (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+int32 OnInstanceProgressUpdate(CInstance* PInstance)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceProgressUpdate");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PInstance->GetZone()->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceProgressUpdate: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceProgressUpdate");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		ShowError("luautils::OnInstanceProgressUpdate: undefined procedure onInstanceProgressUpdate\n");
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	lua_pushinteger(LuaHandle, PInstance->GetProgress());
+
+	if (lua_pcall(LuaHandle, 2, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceProgressUpdate %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceProgressUpdate (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+int32 OnInstanceStageChange(CInstance* PInstance)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceStageChange");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PInstance->GetZone()->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceStageChange: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceStageChange");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		ShowError("luautils::OnInstanceStageChange: undefined procedure onInstanceStageChange\n");
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	lua_pushinteger(LuaHandle, PInstance->GetStage());
+
+	if (lua_pcall(LuaHandle, 2, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceStageChange %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceStageChange (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
+int32 OnInstanceComplete(CInstance* PInstance)
+{
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "onInstanceComplete");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/instances/%s.lua", PInstance->GetZone()->GetName(), PInstance->GetName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnInstanceComplete: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "onInstanceComplete");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		ShowError("luautils::OnInstanceComplete: undefined procedure onInstanceComplete\n");
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+
+	CLuaInstance LuaInstance(PInstance);
+	Lunar<CLuaInstance>::push(LuaHandle, &LuaInstance);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnInstanceComplete %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return -1;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+	if (returns > 0)
+	{
+		ShowError("luatils::OnInstanceComplete (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
+	return 0;
+}
+
 /************************************************************************
 *                                                                       *
 *                                                                       *
@@ -3657,7 +4150,7 @@ int32 OnTransportEvent(CCharEntity* PChar, uint32 TransportID)
 /********************************************************************
 	onBcnmEnter - callback when you enter a BCNM via a lua call to bcnmEnter(bcnmid)
 *********************************************************************/
-int32 OnBcnmEnter(CCharEntity* PChar, CInstance* PInstance){
+int32 OnBcnmEnter(CCharEntity* PChar, CBattlefield* PBattlefield){
 	int8 File[255];
 	memset(File,0,sizeof(File));
     int32 oldtop = lua_gettop(LuaHandle);
@@ -3665,7 +4158,7 @@ int32 OnBcnmEnter(CCharEntity* PChar, CInstance* PInstance){
     lua_pushnil(LuaHandle);
     lua_setglobal(LuaHandle, "OnBcnmEnter");
 
-	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(),PInstance->getBcnmName());
+	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(), PBattlefield->getBcnmName());
 
 	if( luaL_loadfile(LuaHandle,File) || lua_pcall(LuaHandle,0,0,0) )
 	{
@@ -3685,8 +4178,8 @@ int32 OnBcnmEnter(CCharEntity* PChar, CInstance* PInstance){
 	CLuaBaseEntity LuaBaseEntity(PChar);
 	Lunar<CLuaBaseEntity>::push(LuaHandle,&LuaBaseEntity);
 
-	CLuaInstance LuaInstanceEntity(PInstance);
-	Lunar<CLuaInstance>::push(LuaHandle,&LuaInstanceEntity);
+	CLuaBattlefield LuaBattlefieldEntity(PBattlefield);
+	Lunar<CLuaBattlefield>::push(LuaHandle, &LuaBattlefieldEntity);
 
 	if( lua_pcall(LuaHandle,2,LUA_MULTRET,0) )
 	{
@@ -3713,7 +4206,7 @@ int32 OnBcnmEnter(CCharEntity* PChar, CInstance* PInstance){
 	This callback is executed for everyone in the BCNM when they leave
 	so if they leave via win, this will be called for each char.
 *********************************************************************/
-int32 OnBcnmLeave(CCharEntity* PChar, CInstance* PInstance, uint8 LeaveCode){
+int32 OnBcnmLeave(CCharEntity* PChar, CBattlefield* PBattlefield, uint8 LeaveCode){
 	int8 File[255];
 	memset(File,0,sizeof(File));
     int32 oldtop = lua_gettop(LuaHandle);
@@ -3721,7 +4214,7 @@ int32 OnBcnmLeave(CCharEntity* PChar, CInstance* PInstance, uint8 LeaveCode){
     lua_pushnil(LuaHandle);
     lua_setglobal(LuaHandle, "OnBcnmLeave");
 
-	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(),PInstance->getBcnmName());
+	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(), PBattlefield->getBcnmName());
 
 	if( luaL_loadfile(LuaHandle,File) || lua_pcall(LuaHandle,0,0,0) )
 	{
@@ -3741,8 +4234,8 @@ int32 OnBcnmLeave(CCharEntity* PChar, CInstance* PInstance, uint8 LeaveCode){
 	CLuaBaseEntity LuaBaseEntity(PChar);
 	Lunar<CLuaBaseEntity>::push(LuaHandle,&LuaBaseEntity);
 
-	CLuaInstance LuaInstanceEntity(PInstance);
-	Lunar<CLuaInstance>::push(LuaHandle,&LuaInstanceEntity);
+	CLuaBattlefield LuaBattlefieldEntity(PBattlefield);
+	Lunar<CLuaBattlefield>::push(LuaHandle, &LuaBattlefieldEntity);
 
 	lua_pushinteger(LuaHandle,LeaveCode);
 
@@ -3770,9 +4263,9 @@ int32 OnBcnmLeave(CCharEntity* PChar, CInstance* PInstance, uint8 LeaveCode){
 	For example, trading an orb, selecting the battle.
 	Called AFTER assigning BCNM status to all valid characters.
 	This callback is called only for the character initiating the
-	registration, and after CInstance:init() procedure.
+	registration, and after CBattlefield:init() procedure.
 *********************************************************************/
-int32 OnBcnmRegister(CCharEntity* PChar, CInstance* PInstance){
+int32 OnBcnmRegister(CCharEntity* PChar, CBattlefield* PBattlefield){
 	int8 File[255];
 	memset(File,0,sizeof(File));
     int32 oldtop = lua_gettop(LuaHandle);
@@ -3780,7 +4273,7 @@ int32 OnBcnmRegister(CCharEntity* PChar, CInstance* PInstance){
     lua_pushnil(LuaHandle);
     lua_setglobal(LuaHandle, "OnBcnmRegister");
 
-	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(),PInstance->getBcnmName());
+	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", PChar->loc.zone->GetName(), PBattlefield->getBcnmName());
 
 	if( luaL_loadfile(LuaHandle,File) || lua_pcall(LuaHandle,0,0,0) )
 	{
@@ -3800,8 +4293,8 @@ int32 OnBcnmRegister(CCharEntity* PChar, CInstance* PInstance){
 	CLuaBaseEntity LuaBaseEntity(PChar);
 	Lunar<CLuaBaseEntity>::push(LuaHandle,&LuaBaseEntity);
 
-	CLuaInstance LuaInstanceEntity(PInstance);
-	Lunar<CLuaInstance>::push(LuaHandle,&LuaInstanceEntity);
+	CLuaBattlefield LuaBattlefieldEntity(PBattlefield);
+	Lunar<CLuaBattlefield>::push(LuaHandle, &LuaBattlefieldEntity);
 	if( lua_pcall(LuaHandle,2,LUA_MULTRET,0) )
 	{
 		ShowError("luautils::OnBcnmRegister: %s\n",lua_tostring(LuaHandle,-1));
