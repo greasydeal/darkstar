@@ -48,6 +48,8 @@ CCharEntity::CCharEntity()
     m_isMentor = false;
     m_isNewPlayer = true;
 
+	allegiance = ALLEGIANCE_PLAYER;
+
     TradeContainer  = new CTradeContainer();
 	Container       = new CTradeContainer();
 	UContainer      = new CUContainer();
@@ -61,6 +63,7 @@ CCharEntity::CCharEntity()
 	m_Mogsatchel = new CItemContainer(LOC_MOGSATCHEL);
 	m_Mogsack	 = new CItemContainer(LOC_MOGSACK);
 	m_Mogcase	 = new CItemContainer(LOC_MOGCASE);
+    m_Wardrobe   = new CItemContainer(LOC_WARDROBE);
 
 	memset(& jobs,  0, sizeof(jobs));
 	memset(& keys,  0, sizeof(keys));
@@ -108,7 +111,6 @@ CCharEntity::CCharEntity()
     m_hasAutoTarget    = 1;
 	m_InsideRegionID   = 0;
 	m_LevelRestriction = 0;
-	m_insideBCNM = false;
 	m_lastBcnmTimePrompt = 0;
 	m_AHHistoryTimestamp = 0;
     m_DeathCounter = 0;
@@ -279,6 +281,7 @@ CItemContainer* CCharEntity::getStorage(uint8 LocationID)
 		case LOC_MOGSATCHEL: return m_Mogsatchel;
 		case LOC_MOGSACK:	 return m_Mogsack;
 		case LOC_MOGCASE:	 return m_Mogcase;
+        case LOC_WARDROBE:   return m_Wardrobe;
 	}
 
 	DSP_DEBUG_BREAK_IF(LocationID >= MAX_CONTAINER_ID);	// неразрешенный ID хранилища

@@ -54,6 +54,8 @@ public:
 	int32 setAsFastest(lua_State*);
 	int32 setEntrance(lua_State*);
 	int32 getEntrance(lua_State*);
+	int32 insertAlly(lua_State*);
+	int32 getAllies(lua_State*);
 };
 
 #endif

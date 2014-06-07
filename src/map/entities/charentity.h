@@ -271,7 +271,6 @@ public:
 	assaultlog_t			m_assaultLog;					// список assault миссий
 	campaignlog_t			m_campaignLog;					// список campaing миссий
     uint32					m_rangedDelay;					// ranged attack delay (with timestamp for repeat attacks, hence 32bit)for items, abilities and magic
-	bool					m_insideBCNM;					// true if user is inside a bcnm
 	uint32					m_lastBcnmTimePrompt;			// the last message prompt in seconds
 	PetInfo_t				petZoningInfo;					// used to repawn dragoons pets ect on zone
 	void					resetPetZoningInfo();			// reset pet zoning info (when changing job ect)
@@ -394,6 +393,7 @@ private:
 	CItemContainer*	  m_Mogsatchel;
 	CItemContainer*	  m_Mogsack;
 	CItemContainer*   m_Mogcase;
+    CItemContainer*   m_Wardrobe;
 
 	bool			m_isWeaponSkillKill;
 	bool			m_isMijinGakure;
