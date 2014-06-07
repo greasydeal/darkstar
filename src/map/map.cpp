@@ -565,6 +565,7 @@ int32 parse(int8* buff, size_t* buffsize, sockaddr_in* from, map_session_data_t*
             ShowWarning("Bad packet size %03hX | %04hX %04hX %02hX from user: %s\n", SmallPD_Type, RBUFW(SmallPD_ptr,2), RBUFW(buff,2), SmallPD_Size, PChar->GetName());
         }
 	}
+	((CAICharNormal*)PChar->PBattleAI)->CheckActionAfterReceive(gettick());
     map_session_data->client_packet_id = SmallPD_Code;
 
 	// здесь мы проверяем, получил ли клиент предыдущий пакет
@@ -689,10 +690,6 @@ int32 map_close_session(uint32 tick, CTaskMgr::CTask* PTask)
 		map_session_data->PChar != NULL)					// crash occured when both server_packet_data & PChar were NULL
 	{
 		charutils::SavePlayTime(map_session_data->PChar);
-        if (map_session_data->PChar->isDead())
-        {
-            charutils::SaveDeathTime(map_session_data->PChar);
-        }
 
 		Sql_Query(SqlHandle, "DELETE FROM accounts_sessions WHERE charid = %u", map_session_data->PChar->id);
 

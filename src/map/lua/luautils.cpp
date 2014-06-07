@@ -193,16 +193,13 @@ int32 SendEntityVisualPacket(lua_State* L)
 	   (!lua_isnil(L,5) && lua_isnumber(L,5)) )
 	{
 		uint32 npcid = (uint32)lua_tointeger(L,1);
-        uint8  param1 = (uint8)lua_tointeger(L,2);
-		uint8  param2 = (uint8)lua_tointeger(L,3);
-		uint8  param3 = (uint8)lua_tointeger(L,4);
-		uint8  param4 = (uint8)lua_tointeger(L,5);
+		const char* command = lua_tostring(L,2);
 
 		CBaseEntity* PNpc = zoneutils::GetEntity(npcid, TYPE_NPC);
 
         if (PNpc != NULL)
         {
-            PNpc->loc.zone->PushPacket(PNpc, CHAR_INRANGE, new CEntityVisualPacket(PNpc, param1, param2, param3, param4));
+            PNpc->loc.zone->PushPacket(PNpc, CHAR_INRANGE, new CEntityVisualPacket(PNpc, command));
         }
 		return 0;
 	}
@@ -254,7 +251,7 @@ int32 GetMobByID(lua_State* L)
 	{
 		uint32 mobid = (uint32)lua_tointeger(L, -1);
 
-		CBaseEntity* PMob = zoneutils::GetEntity(mobid, TYPE_MOB);
+		CBaseEntity* PMob = zoneutils::GetEntity(mobid, TYPE_MOB | TYPE_PET);
 
 		if(PMob == NULL){
 			ShowWarning("luautils::GetMobByID Mob doesn't exist (%d)\n", mobid);
@@ -848,7 +845,7 @@ int32 GetMobAction(lua_State* L)
 
     uint32 mobid = (uint32)lua_tointeger(L,-1);
 
-    CMobEntity* PMob = (CMobEntity*)zoneutils::GetEntity(mobid, TYPE_MOB);
+    CMobEntity* PMob = (CMobEntity*)zoneutils::GetEntity(mobid, TYPE_MOB | TYPE_PET);
     if (PMob != NULL)
     {
         int32 CurrentAction = (int32)PMob->PBattleAI->GetCurrentAction();
@@ -4308,6 +4305,52 @@ int32 OnBcnmRegister(CCharEntity* PChar, CBattlefield* PBattlefield){
         ShowError("luatils::OnBcnmRegister (%s): 0 returns expected, got %d\n", File, returns);
         lua_pop(LuaHandle, returns);
     }
+	return 0;
+}
+
+/********************************************************************
+onBcnmDestroy - called when BCNM is destroyed (cleanup)
+*********************************************************************/
+int32 OnBcnmDestroy(CBattlefield* PBattlefield){
+	int8 File[255];
+	memset(File, 0, sizeof(File));
+	int32 oldtop = lua_gettop(LuaHandle);
+
+	lua_pushnil(LuaHandle);
+	lua_setglobal(LuaHandle, "OnBcnmDestroy");
+
+	snprintf(File, sizeof(File), "scripts/zones/%s/bcnms/%s.lua", zoneutils::GetZone(PBattlefield->getZoneId())->GetName(), PBattlefield->getBcnmName());
+
+	if (luaL_loadfile(LuaHandle, File) || lua_pcall(LuaHandle, 0, 0, 0))
+	{
+		ShowError("luautils::OnBcnmDestroy: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	lua_getglobal(LuaHandle, "OnBcnmDestroy");
+	if (lua_isnil(LuaHandle, -1))
+	{
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+
+	CLuaBattlefield LuaBattlefieldEntity(PBattlefield);
+	Lunar<CLuaBattlefield>::push(LuaHandle, &LuaBattlefieldEntity);
+
+	if (lua_pcall(LuaHandle, 1, LUA_MULTRET, 0))
+	{
+		ShowError("luautils::OnBcnmDestroy: %s\n", lua_tostring(LuaHandle, -1));
+		lua_pop(LuaHandle, 1);
+		return 0;
+	}
+	int32 returns = lua_gettop(LuaHandle) - oldtop;
+
+	if (returns > 0)
+	{
+		ShowError("luatils::OnBcnmDestroy (%s): 0 returns expected, got %d\n", File, returns);
+		lua_pop(LuaHandle, returns);
+	}
 	return 0;
 }
 /************************************************************************

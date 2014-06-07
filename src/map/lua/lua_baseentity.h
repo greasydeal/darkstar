@@ -553,12 +553,17 @@ public:
 	int32 rangedDmgTaken(lua_State* L);
 
 	int32 entityVisualPacket(lua_State* L);
+	int32 entityAnimationPacket(lua_State* L);
 	int32 getParty(lua_State* L);
 	int32 messageText(lua_State* L);
 	int32 instanceEntry(lua_State* L);
 	int32 getInstance(lua_State* L);
 	int32 setInstance(lua_State* L);
 	int32 createInstance(lua_State* L);
+	int32 getEnmityList(lua_State* L);
+	int32 spawn(lua_State* L);
+	int32 getCurrentAction(lua_State* L);
+	int32 getAllegiance(lua_State* L);
 };
 
 #endif
