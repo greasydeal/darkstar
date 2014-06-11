@@ -192,14 +192,14 @@ uint32 CMobEntity::GetRandomGil()
 
 bool CMobEntity::CanDropGil()
 {
-    // smaller than 0 means drop no gil
+    /* smaller than 0 means drop no gil
     if(getMobMod(MOBMOD_GIL_MAX) < 0) return false;
 
     if(getMobMod(MOBMOD_GIL_MIN) > 0 || getMobMod(MOBMOD_GIL_MAX))
     {
         return true;
-    }
-
+    } */
+	return true;
     return m_EcoSystem == SYSTEM_BEASTMEN;
 }
 
