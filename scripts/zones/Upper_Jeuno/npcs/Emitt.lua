@@ -109,4 +109,14 @@ function onEventFinish(player,csid,option)
 		end;
 	end;
 	
+	if(player:getFreeSlotsCount() >= 1) then
+		if(player:hasItem(0x1055) == false) then
+			player:addItem(0x1055);
+			player:messageSpecial(ITEM_OBTAINED,0x1055);
+		else
+			player:messageSpecial(ITEM_CANNOT_BE_OBTAINED,0x1055);
+		end;
+	else
+		player:messageSpecial(ITEM_CANNOT_BE_OBTAINED,0x1055);
+	end;
 end;
