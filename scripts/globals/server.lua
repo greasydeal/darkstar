@@ -20,6 +20,8 @@ require("scripts/globals/titles");
 
 function onServerStart()
 
+	SetMogTablets();
+
     if (EXPLORER_MOOGLE == 1) then
         SetExplorerMoogles();
     end
@@ -175,6 +177,30 @@ function SetGroundsTome()
         end
         i = i + 1;
     end
+
+end;
+
+-----------------------------------
+-- SetMogTablets
+----------------------------------
+function SetMogTablets()
+
+	local mogTabs =
+	{
+		17195683, -- La Theine Plateau
+		17195617
+	}
+	
+	i = 1;
+	while i <= (table.getn(mogTabs)) do
+		local npc = GetNPCByID(mogTabs[i]);
+		if(npc == nil) then
+			printf("'SetMogTablets' Error trying to load undefined npc (%d)", mogTabs[i]);
+		else
+			npc:setStatus(0);
+		end				
+		i = i + 1;
+	end
 
 end;
 
