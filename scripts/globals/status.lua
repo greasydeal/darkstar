@@ -909,6 +909,8 @@ MOD_VFLOURISH_MACC          = 0x1ED -- Violent Flourish accuracy bonus (modId = 
 MOD_STEP_FINISH             = 0x1EE -- Bonus finishing moves from steps (modId = 494)
 MOD_STEP_ACCURACY           = 0x193 -- Accuracy bonus for steps (modID = 403)
 MOD_SPECTRAL_JIG            = 0x1EF --Spectral Jig duration modifier (percent increase) (modId = 495)
+MOD_WALTZ_RECAST            = 0x1F1 -- (modID = 497) Waltz recast modifier (percent)
+MOD_SAMBA_PDURATION         = 0x1F2 -- (modID = 498) Samba percent duration bonus
 MOD_WIDESCAN            	= 0x154
 MOD_BARRAGE_ACC			    =0x1A4
 MOD_ENSPELL             	= 0x155
@@ -1798,3 +1800,26 @@ SYSTEM_UNCLASSIFIED		= 18;
 SYSTEM_UNDEAD			= 19;
 SYSTEM_VERMIN			= 20;
 SYSTEM_VORAGEAN			= 21;
+
+-----------------------------------
+--
+--	Spell AOE IDs
+--
+-----------------------------------
+
+SPELLAOE_NONE           = 0;
+SPELLAOE_RADIAL         = 1;
+SPELLAOE_CONAL          = 2;
+SPELLAOE_RADIAL_MANI    = 3;  -- AOE when under SCH stratagem Manifestation
+SPELLAOE_RADIAL_ACCE    = 4;  -- AOE when under SCH stratagem Accession
+SPELLAOE_PIANISSIMO     = 5;  -- Single target when under BRD JA Pianissimo
+SPELLAOE_DIFFUSION		= 6;   -- AOE when under Diffusion
+
+-----------------------------------
+--
+--	Spell flag bits
+--
+-----------------------------------
+
+SPELLFLAG_NONE		= 0;
+SPELLFLAG_HIT_ALL	= 1;		-- hit all targets in range regardless of party

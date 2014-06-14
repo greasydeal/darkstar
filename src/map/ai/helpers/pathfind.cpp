@@ -94,7 +94,9 @@ bool CPathFind::RoamAround(position_t point, uint8 roamFlags)
 
 bool CPathFind::PathTo(position_t point, uint8 pathFlags)
 {
-
+	// don't follow a new path if the current path has script flag and new path doesn't
+	if (IsFollowingPath() && m_pathFlags & PATHFLAG_SCRIPT && !(pathFlags & PATHFLAG_SCRIPT))
+		return false;
 	Clear();
 
 	m_pathFlags = pathFlags;
@@ -261,11 +263,6 @@ void CPathFind::StepTo(position_t* pos, bool run)
 
 	float speed = GetRealSpeed();
 
-	if (speed == 0)
-	{
-		ShowWarning("CPathFind::StepTo Mob (%d) speed is zero and its trying to move\n", m_PTarget->id);
-	}
-
 	int8 mode = 2;
 
 	if (!run)
@@ -401,6 +398,11 @@ float CPathFind::GetRealSpeed()
 bool CPathFind::IsFollowingPath()
 {
 	return m_pathLength > 0;
+}
+
+bool CPathFind::IsFollowingScriptedPath()
+{
+	return m_pathLength > 0 && m_pathFlags & PATHFLAG_SCRIPT;
 }
 
 bool CPathFind::AtPoint(position_t* pos)

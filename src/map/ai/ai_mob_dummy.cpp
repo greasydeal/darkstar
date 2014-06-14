@@ -92,6 +92,8 @@ void CAIMobDummy::CheckCurrentAction(uint32 tick)
 
 	m_PMob->PEnmityContainer->DecayEnmity();
 
+	OnTick();
+
 	switch(m_ActionType)
 	{
 		case ACTION_NONE:                                           break;
@@ -160,6 +162,8 @@ void CAIMobDummy::ActionRoaming()
 		return;
 	}
 
+        uint8 updates = 0;
+
 	if(m_PMob->m_roamFlags & ROAMFLAG_IGNORE)
 	{
 		// don't claim me if I ignore
@@ -173,20 +177,26 @@ void CAIMobDummy::ActionRoaming()
 	{
 		FollowPath();
 
-		m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_POS));
-
+                updates |= UPDATE_POS;
 	}
     else if (m_Tick >= m_LastActionTime + m_PMob->getBigMobMod(MOBMOD_ROAM_COOL))
 	{
 		// lets buff up or move around
 
-		// recover health
-		// can't rest when taking hp damage
-		if(!m_PMob->getMod(MOD_REGEN_DOWN) && !m_PMob->StatusEffectContainer->HasStatusEffectByFlag(EFFECTFLAG_NO_REST) && !m_PMob->Rest(0.1f))
-		{
-			// undirty exp
-			m_PMob->m_giveExp = true;
-		}
+                // can't rest with poison or disease
+            if(m_PMob->CanRest()){
+                // recover 10% health
+                if(m_PMob->Rest(0.1f))
+                {
+                    // health updated
+                    updates |= UPDATE_HP;
+                }
+                else
+                {
+                    // at max health undirty exp
+                    m_PMob->m_giveExp = true;
+                }
+            }
 
 		// if I just disengaged check if I should despawn
 		if(m_checkDespawn && m_PMob->IsFarFromHome())
@@ -201,7 +211,7 @@ void CAIMobDummy::ActionRoaming()
 
 				FollowPath();
 
-				m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_POS));
+                                updates |= UPDATE_POS;
 
 				// move back every 5 seconds
 				m_LastActionTime = m_Tick - m_PMob->getBigMobMod(MOBMOD_ROAM_COOL) + MOB_NEUTRAL_TIME;
@@ -234,7 +244,7 @@ void CAIMobDummy::ActionRoaming()
 				m_PMob->HideModel(true);
 				m_PMob->animationsub = 0;
 
-				m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_POS));
+                                updates |= UPDATE_POS;
 			}
 			else if(m_PMob->m_roamFlags & ROAMFLAG_EVENT)
 			{
@@ -242,7 +252,7 @@ void CAIMobDummy::ActionRoaming()
 				luautils::OnMobRoamAction(m_PMob);
 				m_LastActionTime = m_Tick;
 
-				m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_POS));
+                                updates |= UPDATE_POS;
 			}
 			else if(m_PMob->CanRoam() && m_PPathFind->RoamAround(m_PMob->m_SpawnPoint, m_PMob->m_roamFlags))
 			{
@@ -261,8 +271,7 @@ void CAIMobDummy::ActionRoaming()
 					FollowPath();
 				}
 
-				m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_POS));
-
+                                updates |= UPDATE_POS;
 			}
 			else
 			{
@@ -277,6 +286,8 @@ void CAIMobDummy::ActionRoaming()
 	{
 		luautils::OnMobRoam(m_PMob);
 	}
+
+        m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, updates));
 }
 
 /************************************************************************
@@ -509,6 +520,10 @@ void CAIMobDummy::ActionDropItems()
 			// NOTE: this is called for all alliance / party members!
 			luautils::OnMobDeath(m_PMob, PChar);
 
+		}
+		else
+		{
+			luautils::OnMobDeath(m_PMob, NULL);
 		}
         m_ActionType = ACTION_DEATH;
 	}
@@ -1029,11 +1044,7 @@ void CAIMobDummy::ActionAbilityFinish()
 	else
 	{
 		// increase magic / ranged timer so its not used right after
-		m_LastMagicTime = m_Tick + m_PMobSkill->getAnimationTime();
-		m_LastSpecialTime = m_Tick + m_PMobSkill->getAnimationTime();
-        m_LastActionTime = m_Tick + m_PMobSkill->getAnimationTime();
-
-        m_ActionType = ACTION_ATTACK;
+		Stun(m_PMobSkill->getAnimationTime());
 
         if (m_PMobSkill->getActivationTime() == 0 && m_PMobSkill->getAnimationTime() < 1000)
         {
@@ -1114,8 +1125,11 @@ void CAIMobDummy::ActionStun()
 
 	if(m_PBattleSubTarget != NULL)
 	{
-	    // always face target
-	    m_PPathFind->LookAt(m_PBattleSubTarget->loc.p);
+	    // face the target
+		if (!(m_PMob->m_Behaviour & BEHAVIOUR_NO_TURN))
+		{
+			m_PPathFind->LookAt(m_PBattleSubTarget->loc.p);
+		}	
 	}
 
 	m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_COMBAT));
@@ -1189,12 +1203,12 @@ void CAIMobDummy::ActionMagicFinish()
 
 	m_PMob->loc.zone->PushPacket(m_PMob, CHAR_INRANGE, new CEntityUpdatePacket(m_PMob, ENTITY_UPDATE, UPDATE_COMBAT));
 
+	// display animation, then continue fighting
+	Stun(m_PSpell->getAnimationTime());
+
 	// this shouldn't have to exist all the way through
 	m_PSpell = NULL;
 	m_PBattleSubTarget = NULL;
-
-	// display animation, then continue fighting
-	Stun(1000);
 }
 
 void CAIMobDummy::ActionMagicInterrupt()
@@ -1332,6 +1346,13 @@ void CAIMobDummy::ActionAttack()
 		return;
 	}
 
+	if (m_PPathFind->IsFollowingScriptedPath())
+	{
+		m_PPathFind->FollowPath();
+		FinishAttack();
+		return;
+	}
+
     // attempt to teleport
     if (m_PMob->getMobMod(MOBMOD_TELEPORT_TYPE) == 1)
     {
@@ -1350,7 +1371,12 @@ void CAIMobDummy::ActionAttack()
         }
     }
     // try to standback if I can
-    if (m_PMob->getBigMobMod(MOBMOD_STANDBACK_TIME) && m_PMob->getMobMod(MOBMOD_TELEPORT_TYPE) != 2)
+	if (m_PMob->m_Behaviour & BEHAVIOUR_STANDBACK)
+	{
+		FinishAttack();
+		return;
+	}
+    else if (m_PMob->getBigMobMod(MOBMOD_STANDBACK_TIME) && m_PMob->getMobMod(MOBMOD_TELEPORT_TYPE) != 2)
 	{
 		if(currentDistance > 28)
 		{
@@ -1392,7 +1418,7 @@ void CAIMobDummy::ActionAttack()
 		}
 	}
 
-    bool move = false;
+    bool move = m_PPathFind->IsFollowingPath();
 
     //If using mobskills instead of attacks, calculate distance to move and ability to use here
     if (m_mobskillattack)
@@ -1746,12 +1772,6 @@ void CAIMobDummy::ActionAttack()
 
 void CAIMobDummy::FinishAttack()
 {
-	// launch OnMobFight every 3 sec (not everytime at 0 but 0~400).
-	if((m_Tick - m_StartBattle) % 3000 <= 400)
-	{
-		luautils::OnMobFight(m_PMob,m_PBattleTarget);
-	}
-
 	if(m_PMob->getMobMod(MOBMOD_RAGE) && !m_PMob->hasRageMode() && m_Tick >= m_StartBattle + m_PMob->getBigMobMod(MOBMOD_RAGE))
 	{
 		// come at me bro
@@ -2330,4 +2350,13 @@ bool CAIMobDummy::getMobSkillAttack()
 bool CAIMobDummy::isActionQueueAttack()
 {
     return m_actionqueueability;
+}
+
+void CAIMobDummy::OnTick()
+{
+	// launch OnMobFight every sec
+	if (battleutils::IsEngauged(m_PMob) && (m_Tick - m_StartBattle) % 1000 < 500)
+	{
+		luautils::OnMobFight(m_PMob, m_PBattleTarget);
+	}
 }

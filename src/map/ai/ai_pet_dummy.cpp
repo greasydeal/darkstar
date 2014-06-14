@@ -603,13 +603,13 @@ void CAIPetDummy::ActionRoaming()
 		{
 			m_PPathFind->FollowPath();
 		}
-		else
+		else if(m_PPet->GetSpeed() > 0)
 		{
 			m_PPathFind->WarpTo(m_PPet->PMaster->loc.p, PET_ROAM_DISTANCE);
 		}
-
-		m_PPet->loc.zone->PushPacket(m_PPet, CHAR_INRANGE, new CEntityUpdatePacket(m_PPet, ENTITY_UPDATE, UPDATE_COMBAT));
 	}
+
+    m_PPet->loc.zone->PushPacket(m_PPet, CHAR_INRANGE, new CEntityUpdatePacket(m_PPet, ENTITY_UPDATE, UPDATE_COMBAT));
 }
 
 void CAIPetDummy::ActionEngage()
@@ -801,7 +801,13 @@ void CAIPetDummy::ActionAttack()
 
 							damage = (uint16)((m_PPet->GetMainWeaponDmg() + battleutils::GetFSTR(m_PPet, m_PBattleTarget,SLOT_MAIN)) * DamageRatio);
 						}
-					}
+					} else {
+                        // create enmity even on misses
+                        if(m_PBattleTarget->objtype == TYPE_MOB){
+                            CMobEntity* PMob = (CMobEntity*)m_PBattleTarget;
+                            PMob->PEnmityContainer->UpdateEnmity(m_PPet, 0, 0);
+                        }
+                    }
 					if (m_PBattleTarget->objtype == TYPE_PC)
 					{
 						charutils::TrySkillUP((CCharEntity*)m_PBattleTarget, SKILL_EVA, m_PPet->GetMLevel());
@@ -894,21 +900,23 @@ void CAIPetDummy::ActionDisengage()
 
 void CAIPetDummy::ActionFall()
 {
-	//Charmed pets do not die when their master kicks the bucket
-	if(m_PPet->GetHPP() != 0 && m_PPet->objtype == TYPE_MOB && m_PPet->PMaster->objtype == TYPE_PC){
-		petutils::DespawnPet(m_PPet->PMaster);
-		return;
-	}
+        bool isMob = m_PPet->objtype == TYPE_MOB;
+        // remove master from pet
+        if(m_PPet->PMaster != NULL){
+            petutils::DetachPet(m_PPet->PMaster);
+        }
+
+        // detach pet just deleted this
+        // so break out of here
+        if(isMob){
+            return;
+        }
+
+        m_PPet->health.hp = 0;
 
 	m_PPet->loc.zone->PushPacket(m_PPet, CHAR_INRANGE, new CEntityUpdatePacket(m_PPet, ENTITY_UPDATE, UPDATE_COMBAT));
 
-	if(m_PPet->PMaster->objtype == TYPE_PC && distance(m_PPet->loc.p, m_PPet->PMaster->loc.p) >= 50){
-		//master won't get this fall packet, so send it directly
-		((CCharEntity*)m_PPet->PMaster)->pushPacket(new CEntityUpdatePacket(m_PPet, ENTITY_UPDATE, UPDATE_COMBAT));
-	}
-
 	m_LastActionTime = m_Tick;
-	m_PPet->health.hp = 0;
 	m_ActionType = ACTION_DEATH;
 }
 
@@ -918,34 +926,8 @@ void CAIPetDummy::ActionDeath()
 		m_PPet->status = STATUS_DISAPPEAR;
         m_PPet->StatusEffectContainer->DelStatusEffectsByFlag(EFFECTFLAG_DEATH, true);
 
-		//a charmed pet was killed
-		if(m_PPet->objtype == TYPE_MOB && m_PPet->PMaster->objtype == TYPE_PC)
-		{
-			((CCharEntity*)m_PPet->PMaster)->pushPacket(new CEntityUpdatePacket(m_PPet, ENTITY_DESPAWN, UPDATE_NONE));
-			petutils::DespawnPet(m_PPet->PMaster);
-			return;
-		}
-
-		if(m_PPet->PMaster!=NULL){
-			if(m_PPet->PMaster->objtype == TYPE_PC && distance(m_PPet->loc.p, m_PPet->PMaster->loc.p) >= 50){
-				//master won't get this despawn packet, so send it directly
-				((CCharEntity*)m_PPet->PMaster)->pushPacket(new CEntityUpdatePacket(m_PPet, ENTITY_DESPAWN, UPDATE_NONE));
-			}
-			m_PPet->PMaster->PPet = NULL;
-		}
 		m_PPet->loc.zone->PushPacket(m_PPet, CHAR_INRANGE, new CEntityUpdatePacket(m_PPet, ENTITY_DESPAWN, UPDATE_NONE));
-		if (m_PPet->PMaster != NULL && m_PPet->PMaster->objtype == TYPE_PC)
-		{
-			((CCharEntity*)m_PPet->PMaster)->pushPacket(new CCharUpdatePacket((CCharEntity*)m_PPet->PMaster));
-			charutils::BuildingCharPetAbilityTable((CCharEntity*)m_PPet->PMaster,m_PPet,0);//blank the pet commands
-		}
-		if(m_PPet->getPetType() == PETTYPE_AVATAR){
-			m_PPet->PMaster->setModifier(MOD_AVATAR_PERPETUATION, 0);
-		}
 
-        if (m_PPet->getPetType() != PETTYPE_AUTOMATON){
-		    m_PPet->PMaster = NULL;
-        }
 		m_ActionType = ACTION_NONE;
 	}
 }
