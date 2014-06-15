@@ -467,7 +467,7 @@ function mogCardTrade(player,npc,trade)
 	local job = player:getMainJob();
 	local gearSet;
 	
--- Tier 1 
+	-- Tier 1 
 	if(trade:hasItemQty(961,1) == true and trade:hasItemQty(974,1) == true and trade:hasItemQty(987,1) == true and trade:hasItemQty(1000,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
 		
 		if(job == 1 or job == 7 or job == 8 or job == 9 or job == 12 or job == 13 or job == 14 or job == 22) then
@@ -492,32 +492,83 @@ function mogCardTrade(player,npc,trade)
 			
 		end;
 	
-	-- 
-	if(trade:hasItemQty(983,1) == true and trade:hasItemQty(970,1) == true and trade:hasItemQty(1009,1) == true and trade:hasItemQty(1000,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
+	-- Tier 2
+	elseif(trade:hasItemQty(983,1) == true and trade:hasItemQty(970,1) == true and trade:hasItemQty(996,1) == true and trade:hasItemQty(1009,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
 		
 		if(job == 1 or job == 7 or job == 8 or job == 9 or job == 12 or job == 13 or job == 14 or job == 22) then
 			gearSet =
 			{
-			0x31A1, -- (1) Brass Mittens
-			0x32A1, -- (2) Brass Leggings
-			0x30A1, -- (3) Brass Cap
-			0x3121, -- (4) Brass Harness
-			0x3221  -- (5) Brass Subligar
+			0x31A7, -- (1) Beetle Mittens
+			0x32A7, -- (2) Beetle Leggings
+			0x30A7, -- (3) Beetle Cap
+			0x3127, -- (4) Beetle Harness
+			0x3223  -- (5) Beetle Subligar
 			}
 			
 		elseif(job == 2 or job == 3 or job == 4 or job == 5 or job == 6 or job == 10 or job == 11 or job == 15 or job == 16 or job == 17 or job == 18 or job == 19 or job == 20 or job == 21) then
 			gearSet =
 			{
-			0x31B0, -- (1) Gloves
-			0x32B0, -- (2) Gaiters
-			0x30B0, -- (3) Headgear
-			0x3130, -- (4) Doublet
-			0x3230  -- (5) Brais
+			0x31B1, -- (1) Cotton Gloves
+			0x32B1, -- (2) Cotton Gaiters
+			0x30B1, -- (3) Cotton Headgear
+			0x3131, -- (4) Cotton Doublet
+			0x3231  -- (5) Cotton Brais
 			}
 			
 		end;
 		
-	end;		
+	-- Tier 3
+	elseif(trade:hasItemQty(984,1) == true and trade:hasItemQty(971,1) == true and trade:hasItemQty(997,1) == true and trade:hasItemQty(1010,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
+		
+		if(job == 1 or job == 7 or job == 8 or job == 9 or job == 12 or job == 13 or job == 14 or job == 22) then
+			gearSet =
+			{
+			0x3196, -- (1) Ctr. F. Gauntlets
+			0x3296, -- (2) Ctr. Greaves
+			0x3096, -- (3) Centurion's Visor
+			0x3116, -- (4) Ctr. Scale Mail
+			0x3216  -- (5) Ctr. Cuisses
+			}
+			
+		elseif(job == 2 or job == 3 or job == 4 or job == 5 or job == 6 or job == 10 or job == 11 or job == 15 or job == 16 or job == 17 or job == 18 or job == 19 or job == 20 or job == 21) then
+			gearSet =
+			{
+			0x31B6, -- (1) Mrc. Cpt. Gloves
+			0x32B6, -- (2) Mrc. Cpt. Gaiters
+			0x30B6, -- (3) Mrc. Cpt. Headgear
+			0x3136, -- (4) Mrc. Cpt. Doublet
+			0x3236  -- (5) Mrc. Cpt. Hose
+			}
+			
+		end;
+		
+		
+	-- Teir 4
+	elseif(trade:hasItemQty(985,1) == true and trade:hasItemQty(972,1) == true and trade:hasItemQty(998,1) == true and trade:hasItemQty(1011,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
+		
+		if(job == 1 or job == 7 or job == 8 or job == 9 or job == 12 or job == 13 or job == 14 or job == 22) then
+			gearSet =
+			{
+			0x319B, -- (1) Cuir Gloves
+			0x329B, -- (2) Cuir Highboots
+			0x309B, -- (3) Cuir Bandana
+			0x310F, -- (4) Ryl. Sqr. Chainmail
+			0x37A3  -- (5) Iron Cuisses
+			}
+			
+		elseif(job == 2 or job == 3 or job == 4 or job == 5 or job == 6 or job == 10 or job == 11 or job == 15 or job == 16 or job == 17 or job == 18 or job == 19 or job == 20 or job == 21) then
+			gearSet =
+			{
+			0x31B6, -- (1) Mrc. Cpt. Gloves
+			0x32B6, -- (2) Mrc. Cpt. Gaiters
+			0x30B6, -- (3) Velvet Hat
+			0x3136, -- (4) Mrc. Cpt. Doublet
+			0x3236  -- (5) Mrc. Cpt. Hose
+			}
+			
+		end;
+		
+	end;	
 	
 	-----------------------
 	-- Give Items
