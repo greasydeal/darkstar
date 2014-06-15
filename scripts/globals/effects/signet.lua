@@ -22,7 +22,7 @@ function onEffectGain(target,effect)
 	target:addMod(MOD_EVA,15);
 	
 	target:delStatusEffect(EFFECT_RERAISE);
-	target:addStatusEffect(EFFECT_RERAISE,1,0,2700);	
+	target:addStatusEffect(EFFECT_RERAISE,1,0,10800);	
 	
 	target:delStatusEffect(EFFECT_REGEN);	
 	target:addStatusEffect(EFFECT_REGEN,1,3,3600);
