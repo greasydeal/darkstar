@@ -512,8 +512,86 @@ void CAIMobDummy::ActionDropItems()
 
 					}
 				}
-			}
 
+				/************************************************************************
+				*																		*
+				*	GREASY'S CUSTOM CODE FOR MOG CARDS									*
+				*																		*
+				************************************************************************/
+
+					uint8 roll = WELL512::irand() % 100;
+					if (roll <= 15) // Drop %
+					{
+						uint8 mobLvl = m_PMob->GetMLevel();
+						uint8 mobTier = 0;
+						if (mobLvl >= 5 && mobLvl <= 15){ mobTier = 1; }
+						if (mobLvl >= 16 && mobLvl <= 25){ mobTier = 2; }
+						if (mobLvl >= 26 && mobLvl <= 35){ mobTier = 3; }
+						if (mobLvl >= 36 && mobLvl <= 45){ mobTier = 4; }
+						if (mobLvl >= 46 && mobLvl <= 65){ mobTier = 5; }
+
+							uint8 maxLvl = 0;
+							uint16 card[4];
+
+							switch (mobTier){
+
+							case 1: // Two of
+								maxLvl = 25;
+								card[0] = { 961 }; // Cups
+								card[1] = { 974 }; // Batons
+								card[2] = { 987 }; // Sword
+								card[3] = { 1000 }; // Coins
+								break;
+							
+							case 2: // Jack of
+								maxLvl = 35;
+								card[0] = { 970 }; // Cups
+								card[1] = { 983 }; // Batons
+								card[2] = { 996 }; // Sword
+								card[3] = { 1009 }; // Coins
+								break;
+
+							case 3: // Queen of
+								maxLvl = 45;
+								card[0] = { 971 }; // Cups
+								card[1] = { 984 }; // Batons
+								card[2] = { 997 }; // Sword
+								card[3] = { 1010 }; // Coins
+								break;
+
+							case 4: // King of
+								maxLvl = 55;
+								card[0] = { 972 }; // Cups
+								card[1] = { 985 }; // Batons
+								card[2] = { 998 }; // Sword
+								card[3] = { 1011 }; // Coins
+								break;
+
+							case 5: // Ace of
+								maxLvl = 75;
+								card[0] = { 960 }; // Cups
+								card[1] = { 973 }; // Batons
+								card[2] = { 986 }; // Sword
+								card[3] = { 999 }; // Coins
+								break;
+							}
+
+							if (mobTier != 0 && PChar->GetMLevel() <= maxLvl + 1){
+								uint16 randomCard = WELL512::irand() % 4;
+								PChar->PTreasurePool->AddItem(card[randomCard], m_PMob);
+							}
+						
+					}
+
+					/************************************************************************
+					*																		*
+					*	 GREASY'S CUSTOM AF DROPS								*
+					*																		*
+					************************************************************************/
+
+
+			}
+			
 			PChar->setWeaponSkillKill(false);
 			m_PMob->StatusEffectContainer->KillAllStatusEffect();
 
@@ -528,6 +606,7 @@ void CAIMobDummy::ActionDropItems()
         m_ActionType = ACTION_DEATH;
 	}
 }
+
 
 /************************************************************************
 *																		*
