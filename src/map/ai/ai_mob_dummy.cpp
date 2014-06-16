@@ -518,21 +518,25 @@ void CAIMobDummy::ActionDropItems()
 				*	GREASY'S CUSTOM CODE FOR MOG CARDS									*
 				*																		*
 				************************************************************************/
-
+					
 					uint8 roll = WELL512::irand() % 100;
 					if (roll <= 15) // Drop %
 					{
+						uint8 Pzone = PChar->getZone();
+						
 						uint8 mobLvl = m_PMob->GetMLevel();
 						uint8 mobTier = 0;
+						bool isAFzone = false;
+
 						if (mobLvl >= 5 && mobLvl <= 15){ mobTier = 1; }
 						if (mobLvl >= 16 && mobLvl <= 25){ mobTier = 2; }
 						if (mobLvl >= 26 && mobLvl <= 35){ mobTier = 3; }
 						if (mobLvl >= 36 && mobLvl <= 45){ mobTier = 4; }
-						if (mobLvl >= 46 && mobLvl <= 65){ mobTier = 5; }
+						if (mobLvl >= 46 && (Pzone == 197 || Pzone == 200 || Pzone == 195 || Pzone == 161)){ mobTier = 5; isAFzone = true; }
 
 							uint8 maxLvl = 0;
 							uint16 card[4];
-
+							
 							switch (mobTier){
 
 							case 1: // Two of
@@ -568,7 +572,7 @@ void CAIMobDummy::ActionDropItems()
 								break;
 
 							case 5: // Ace of
-								maxLvl = 75;
+								maxLvl = 100;
 								card[0] = { 960 }; // Cups
 								card[1] = { 973 }; // Batons
 								card[2] = { 986 }; // Sword
@@ -576,9 +580,29 @@ void CAIMobDummy::ActionDropItems()
 								break;
 							}
 
-							if (mobTier != 0 && PChar->GetMLevel() <= maxLvl + 1){
+							// Drop cards
+							if (mobTier != 0 && isAFzone == false && PChar->GetMLevel() <= maxLvl + 1){
 								uint16 randomCard = WELL512::irand() % 4;
 								PChar->PTreasurePool->AddItem(card[randomCard], m_PMob);
+							 }
+							else if (mobTier != 0 && isAFzone == true) {
+								switch (Pzone){
+									case 197:
+										PChar->PTreasurePool->AddItem(card[0], m_PMob);
+									break;
+									
+									case 200:
+										PChar->PTreasurePool->AddItem(card[1], m_PMob);
+									break;
+
+									case 195:
+										PChar->PTreasurePool->AddItem(card[2], m_PMob);
+									break;
+
+									case 161:
+										PChar->PTreasurePool->AddItem(card[3], m_PMob);
+									break;
+								}
 							}
 						
 					}
@@ -588,6 +612,7 @@ void CAIMobDummy::ActionDropItems()
 					*	 GREASY'S CUSTOM AF DROPS								*
 					*																		*
 					************************************************************************/
+
 
 
 			}
