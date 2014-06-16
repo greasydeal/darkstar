@@ -37,11 +37,13 @@ end;
 -----------------------------------
 
 function onEffectGain(target,effect)
-	target:addMod(MOD_STR, 5);
-	target:addMod(MOD_AGI, 1);
+	target:addMod(MOD_STR, 6);
+	target:addMod(MOD_AGI, 6);
 	target:addMod(MOD_INT, -2);
-	target:addMod(MOD_FOOD_ATTP, 22);
-	target:addMod(MOD_FOOD_ATT_CAP, 60);
+	target:addMod(MOD_FOOD_ATTP, 33);
+	target:addMod(MOD_FOOD_ATT_CAP, 90);
+	target:addMod(MOD_FOOD_RATTP, 25);
+	target:addMod(MOD_FOOD_RATT_CAP, 90);
 end;
 
 -----------------------------------------
