@@ -12,6 +12,7 @@ package.loaded["scripts/zones/RuLude_Gardens/TextIDs"] = nil;
 
 require("scripts/globals/settings");
 require("scripts/globals/teleports");
+require("/scripts/globals/crystal_trader");
 
 -----------------------------------
 -- onTrade Action
@@ -23,6 +24,14 @@ function onTrade(player,npc,trade)
 	end
 end;
 
+-----------------------------------	
+-- onTrade Action	
+-----------------------------------	
+	
+function onTrade(player,npc,trade)
+		mogCrystalTrader(player,npc,trade);
+end;	
+	
 ----------------------------------- 
 -- onTrigger Action 
 -----------------------------------
