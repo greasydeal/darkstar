@@ -61,7 +61,7 @@ function mogCrystalTrader(player,npc,trade)
 			player:tradeComplete();
 			player:addItem(4109);
 			player:messageSpecial(ITEM_OBTAINED,4109);
-		end;
+		
 	else
 		player:PrintToPlayer("Not enough inventory space. Please try again with at least 1 free slots");
 	end;
@@ -71,7 +71,7 @@ function mogCrystalTrader(player,npc,trade)
 			player:tradeComplete();
 			player:addItem(4110);
 			player:messageSpecial(ITEM_OBTAINED,4110);
-		end;
+		
 	else
 		player:PrintToPlayer("Not enough inventory space. Please try again with at least 1 free slots");
 	end;
@@ -81,7 +81,7 @@ function mogCrystalTrader(player,npc,trade)
 			player:tradeComplete();
 			player:addItem(4111);
 			player:messageSpecial(ITEM_OBTAINED,4111);
-		end;
+		
 	else
 		player:PrintToPlayer("Not enough inventory space. Please try again with at least 1 free slots");
 	end;
