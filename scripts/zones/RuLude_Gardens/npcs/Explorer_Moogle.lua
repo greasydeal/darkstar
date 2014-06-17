@@ -21,20 +21,13 @@ require("/scripts/globals/crystal_trader");
 function onTrade(player,npc,trade)
 	if (trade:getGil() == 10 and trade:getItemCount() == 1) then 
 		toHomeNation(player);
-	end
-end;
-
------------------------------------	
--- onTrade Action	
------------------------------------	
-	
-function onTrade(player,npc,trade)
-	if (trade:getGil() == 0 and trade:getItemCount()=1) then
-		mogCrystalTrader(player,npc,trade);
+	else
+		
+	mogCrystalTrader(player,npc,trade);
 	end
 end;	
 	
------------------------------------ 
+-------------------- 
 -- onTrigger Action 
 -----------------------------------
  
