@@ -29,7 +29,9 @@ end;
 -----------------------------------	
 	
 function onTrade(player,npc,trade)
+	if (trade:getGil() == 0 and trade:getItemCount()=1) then
 		mogCrystalTrader(player,npc,trade);
+	end
 end;	
 	
 ----------------------------------- 
