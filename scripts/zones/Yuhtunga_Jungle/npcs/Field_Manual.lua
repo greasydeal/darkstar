@@ -19,6 +19,7 @@ end;
 -----------------------------------	
 	
 function onTrade(player,npc,trade)	
+	mogCardTrade(player,npc,trade);
 end;	
 	
 -----------------------------------	

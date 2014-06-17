@@ -462,10 +462,15 @@ function checkRegime(killer,mob,rid,index)
 	end
 end
 
+-------------------------------------
+-- GREASY'S Mog Card Trade
+-------------------------------------
+
 function mogCardTrade(player,npc,trade)
 	
 	local job = player:getMainJob();
 	local gearSet;
+	local minTradeLvl = 1;
 	
 	-- Tier 1 
 	if(trade:hasItemQty(961,1) == true and trade:hasItemQty(974,1) == true and trade:hasItemQty(987,1) == true and trade:hasItemQty(1000,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
@@ -491,6 +496,8 @@ function mogCardTrade(player,npc,trade)
 			}
 			
 		end;
+		
+		minTradeLvl = 1;
 	
 	-- Tier 2
 	elseif(trade:hasItemQty(983,1) == true and trade:hasItemQty(970,1) == true and trade:hasItemQty(996,1) == true and trade:hasItemQty(1009,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
@@ -517,6 +524,8 @@ function mogCardTrade(player,npc,trade)
 			
 		end;
 		
+		minTradeLvl = 20;
+		
 	-- Tier 3
 	elseif(trade:hasItemQty(984,1) == true and trade:hasItemQty(971,1) == true and trade:hasItemQty(997,1) == true and trade:hasItemQty(1010,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
 		
@@ -542,6 +551,7 @@ function mogCardTrade(player,npc,trade)
 			
 		end;
 		
+		minTradeLvl = 30;
 		
 	-- Teir 4
 	elseif(trade:hasItemQty(985,1) == true and trade:hasItemQty(972,1) == true and trade:hasItemQty(998,1) == true and trade:hasItemQty(1011,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
@@ -552,37 +562,43 @@ function mogCardTrade(player,npc,trade)
 			0x319B, -- (1) Cuir Gloves
 			0x329B, -- (2) Cuir Highboots
 			0x309B, -- (3) Cuir Bandana
-			0x310F, -- (4) Ryl. Sqr. Chainmail
+			0x311B, -- (4) Cuir Bouilli
 			0x37A3  -- (5) Iron Cuisses
 			}
 			
 		elseif(job == 2 or job == 3 or job == 4 or job == 5 or job == 6 or job == 10 or job == 11 or job == 15 or job == 16 or job == 17 or job == 18 or job == 19 or job == 20 or job == 21) then
 			gearSet =
 			{
-			0x31B6, -- (1) Mrc. Cpt. Gloves
-			0x32B6, -- (2) Mrc. Cpt. Gaiters
-			0x30B6, -- (3) Velvet Hat
-			0x3136, -- (4) Mrc. Cpt. Doublet
-			0x3236  -- (5) Mrc. Cpt. Hose
+			0x31BB, -- (1) Velvet Cuffs
+			0x32BB, -- (2) Ebony Sabots
+			0x30BB, -- (3) Velvet Hat
+			0x313B, -- (4) Velvet Robe
+			0x323B  -- (5) Velvet Slops
 			}
 			
 		end;
+		
+		minTradeLvl = 40;
 		
 	end;	
 	
 	-----------------------
 	-- Give Items
 	-----------------------
-	if(player:getFreeSlotsCount() >= 5) then --check free slots
-		local i = 1;
-		while gearSet[i] do
-			player:tradeComplete();
-			player:addItem(gearSet[i]);
-			player:messageSpecial(ITEM_OBTAINED,gearSet[i]);
-			i = i + 1;
+	if(player:getMainLvl() >= minTradeLvl) then --check player level
+		if(player:getFreeSlotsCount() >= 5) then --check free slots
+			local i = 1;
+			while gearSet[i] do
+				player:tradeComplete();
+				player:addItem(gearSet[i]);
+				player:messageSpecial(ITEM_OBTAINED,gearSet[i]);
+				i = i + 1;
+			end;
+		else
+			player:PrintToPlayer("Not enough inventory space. Please try again with at least 5 free slots.");
 		end;
 	else
-		player:PrintToPlayer("Not enough inventory space. Please try again with at least 5 free slots");
+		player:PrintToPlayer(string.format("Those cards require a minimum level of %s.", minTradeLvl));
 	end;
 
 end
