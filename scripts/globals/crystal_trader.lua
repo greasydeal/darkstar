@@ -67,7 +67,7 @@ function mogCrystalTrader(player,npc,trade)
 	end;
 	
 	if(trade:hasItemQty(4102,12) == true and trade:getGil() == 0 and trade:getItemCount() == 12) then
-			if(player:getFreeSlotsCount() >= 1) then 
+		if(player:getFreeSlotsCount() >= 1) then 
 			player:tradeComplete();
 			player:addItem(4110);
 			player:messageSpecial(ITEM_OBTAINED,4110);
@@ -77,7 +77,7 @@ function mogCrystalTrader(player,npc,trade)
 	end;
 	
 	if(trade:hasItemQty(4103,12) == true and trade:getGil() == 0 and trade:getItemCount() == 12) then
-			if(player:getFreeSlotsCount() >= 1) then 
+		if(player:getFreeSlotsCount() >= 1) then 
 			player:tradeComplete();
 			player:addItem(4111);
 			player:messageSpecial(ITEM_OBTAINED,4111);
