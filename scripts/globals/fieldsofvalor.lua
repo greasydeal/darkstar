@@ -471,6 +471,7 @@ function mogCardTrade(player,npc,trade)
 	local job = player:getMainJob();
 	local gearSet;
 	local minTradeLvl = 1;
+	local isAFCards = false;
 	
 	-- Tier 1 
 	if(trade:hasItemQty(961,1) == true and trade:hasItemQty(974,1) == true and trade:hasItemQty(987,1) == true and trade:hasItemQty(1000,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
@@ -584,50 +585,56 @@ function mogCardTrade(player,npc,trade)
 	-- Teir 5 !!!!!!! AF !!!!!!!
 	elseif(trade:hasItemQty(986,1) == true and trade:hasItemQty(973,1) == true and trade:hasItemQty(999,1) == true and trade:hasItemQty(960,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
 		
-		local head = {	12511,12512,13855,13856,12513,-- WAR,MNK,WHM,BLM,RDM,
-						12514,12515,12516,12517,13857,-- THF,PLD,DRK,BST,BRD,
-						12518,13868,13869,12519,12520,-- RNG,SAM,NIN,DRG,SMN
-						15265,15266,15267,16138,16140,-- BLU,COR,PUP,DNC,SCH,
-						-- GEO,RUN
-					};
-		
-		local hands = {	13961,13962,13963,13964,13965,-- WAR,MNK,WHM,BLM,RDM,
-						13966,13967,13968,13969,13970,-- THF,PLD,DRK,BST,BRD,
-						13971,13972,13973,13974,13975,-- RNG,SAM,NIN,DRG,SMN
-						14928,14929,14930,15002,15004,-- BLU,COR,PUP,DNC,SCH,
-						-- GEO,RUN
-					};
-		
-		local body = {	12638,12639,12640,12641,12642,-- WAR,MNK,WHM,BLM,RDM,
-						12643,12644,12645,12646,12647,-- THF,PLD,DRK,BST,BRD,
-						12648,13781,13782,12649,12650,-- RNG,SAM,NIN,DRG,SMN
-						14521,14522,14523,14578,14580,-- BLU,COR,PUP,DNC,SCH,
-						-- GEO,RUN
-					};
-		
-		local legs = {	14214,14215,14216,14217,14218,-- WAR,MNK,WHM,BLM,RDM,
-						14219,14220,14221,14222,14223,-- THF,PLD,DRK,BST,BRD,
-						14224,14225,14226,14227,14228,-- RNG,SAM,NIN,DRG,SMN
-						15600,15601,15602,15659,16311,-- BLU,COR,PUP,DNC,SCH,
-						-- GEO,RUN
-					};
-		
-		local feet = {	14089,14090,14091,14092,14093,-- WAR,MNK,WHM,BLM,RDM,
-						14094,14095,14096,14097,14098,-- THF,PLD,DRK,BST,BRD,
-						14099,14100,14101,14102,14103,-- RNG,SAM,NIN,DRG,SMN
-						15684,15685,15686,15746,15748,-- BLU,COR,PUP,DNC,SCH,
-						-- GEO,RUN
-					};
-		
-		if(job == 19 and player:getRace() == 2 or player:getRace() == 4 or player:getRace() == 6 or player:getRace() ==7) then
-			head[job] = head[job] +1 ;
-			hands[job] = hands[job] + 1;
-			body[job] = body[job] + 1;
-			legs[job] = legs[job] +1;
-			feet[job] = feet[job] +1;
+		if(job != 21 and job != 22) then
+			
+			local head = {	12511,12512,13855,13856,12513,-- WAR,MNK,WHM,BLM,RDM,
+							12514,12515,12516,12517,13857,-- THF,PLD,DRK,BST,BRD,
+							12518,13868,13869,12519,12520,-- RNG,SAM,NIN,DRG,SMN
+							15265,15266,15267,16138,16140,-- BLU,COR,PUP,DNC,SCH,
+							-- GEO,RUN
+						};
+			
+			local hands = {	13961,13962,13963,13964,13965,-- WAR,MNK,WHM,BLM,RDM,
+							13966,13967,13968,13969,13970,-- THF,PLD,DRK,BST,BRD,
+							13971,13972,13973,13974,13975,-- RNG,SAM,NIN,DRG,SMN
+							14928,14929,14930,15002,15004,-- BLU,COR,PUP,DNC,SCH,
+							-- GEO,RUN
+						};
+			
+			local body = {	12638,12639,12640,12641,12642,-- WAR,MNK,WHM,BLM,RDM,
+							12643,12644,12645,12646,12647,-- THF,PLD,DRK,BST,BRD,
+							12648,13781,13782,12649,12650,-- RNG,SAM,NIN,DRG,SMN
+							14521,14522,14523,14578,14580,-- BLU,COR,PUP,DNC,SCH,
+							-- GEO,RUN
+						};
+			
+			local legs = {	14214,14215,14216,14217,14218,-- WAR,MNK,WHM,BLM,RDM,
+							14219,14220,14221,14222,14223,-- THF,PLD,DRK,BST,BRD,
+							14224,14225,14226,14227,14228,-- RNG,SAM,NIN,DRG,SMN
+							15600,15601,15602,15659,16311,-- BLU,COR,PUP,DNC,SCH,
+							-- GEO,RUN
+						};
+			
+			local feet = {	14089,14090,14091,14092,14093,-- WAR,MNK,WHM,BLM,RDM,
+							14094,14095,14096,14097,14098,-- THF,PLD,DRK,BST,BRD,
+							14099,14100,14101,14102,14103,-- RNG,SAM,NIN,DRG,SMN
+							15684,15685,15686,15746,15748,-- BLU,COR,PUP,DNC,SCH,
+							-- GEO,RUN
+						};
+			
+			if(job == 19 and player:getRace() == 2 or player:getRace() == 4 or player:getRace() == 6 or player:getRace() ==7) then
+				head[job] = head[job] +1 ;
+				hands[job] = hands[job] + 1;
+				body[job] = body[job] + 1;
+				legs[job] = legs[job] +1;
+				feet[job] = feet[job] +1;
+			end;
+			
+			gearSet = { head[job], hands[job], body[job], legs[job], feet[job] };
+			
+		else
+			player:PrintToPlayer("This job does not have an artifact armor set");
 		end;
-		
-		gearSet = { head[job], hands[job], body[job], legs[job], feet[job] };
 		
 		minTradeLvl = 50;
 		
