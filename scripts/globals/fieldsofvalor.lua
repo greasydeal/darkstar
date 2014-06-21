@@ -585,7 +585,7 @@ function mogCardTrade(player,npc,trade)
 	-- Teir 5 !!!!!!! AF !!!!!!!
 	elseif(trade:hasItemQty(986,1) == true and trade:hasItemQty(973,1) == true and trade:hasItemQty(999,1) == true and trade:hasItemQty(960,1) == true and trade:getGil() == 0 and trade:getItemCount() == 4) then 
 		
-		if(job != 21 and job != 22) then
+		if not(job == 21 or job == 22) then
 			
 			local head = {	12511,12512,13855,13856,12513,-- WAR,MNK,WHM,BLM,RDM,
 							12514,12515,12516,12517,13857,-- THF,PLD,DRK,BST,BRD,
